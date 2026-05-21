@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpinPick — Smart Classroom Wheel for Teachers & Students</title>
+<meta name="description" content="Free classroom spin wheel with scoring, reports and voice narration. Teacher and student modes.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1565C0;--blue-l:#E8F1FB;--green:#2E7D32;--green-l:#E8F5E9;
+  --red:#C62828;--red-l:#FFEBEE;--orange:#E65100;
+  --bg:#F4F6FB;--card:#FFFFFF;--border:#E4E7EF;
+  --text:#1A1D2E;--muted:#6B7280;
+  --shadow:0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.13);
+  --r:14px;--font:'Nunito',sans-serif;--fontb:'Nunito Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:0 1.5rem;height:54px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,0.06);
+}
+.logo{font-family:var(--font);font-size:22px;font-weight:900;color:var(--text);letter-spacing:-0.5px;text-decoration:none}
+.logo span{color:#E53935}
+.mode-toggle{display:flex;gap:4px;background:var(--bg);border-radius:30px;padding:4px;border:1px solid var(--border)}
+.mode-toggle button{
+  padding:5px 14px;border-radius:24px;border:none;font-size:12px;font-weight:700;
+  font-family:var(--fontb);cursor:pointer;color:var(--muted);background:transparent;transition:all 0.18s;
+}
+.mode-toggle button.active-t{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(21,101,192,0.3)}
+.mode-toggle button.active-s{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(46,125,50,0.3)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.narr-btn{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.15s;white-space:nowrap}
+.narr-btn.on.female{background:#FCE4EC;border-color:#E91E63;color:#C2185B}
+.narr-btn.on.male{background:#E3F2FD;border-color:#1565C0;color:#0D47A1}
+
+/* ── MAIN LAYOUT ── */
+.main{display:grid;grid-template-columns:1fr 300px;gap:0;min-height:calc(100vh - 54px)}
+
+/* ── LEFT PANEL ── */
+.left-panel{
+  background:var(--card);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;min-height:calc(100vh - 54px);
+  position:relative;overflow:hidden;
+}
+
+/* Stage — where the active big wheel lives */
+.wheel-stage{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:1.5rem 1.5rem 0.5rem;
+  position:relative;
+}
+.stage-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--muted);margin-bottom:8px;text-align:center;
+}
+.wheel-title-edit{
+  border:none;border-bottom:1.5px dashed var(--border);padding:4px 8px;
+  font-size:13px;font-family:var(--font);font-weight:700;color:var(--muted);
+  background:transparent;text-align:center;outline:none;cursor:text;
+  transition:border-color 0.15s,color 0.15s;margin-bottom:10px;width:100%;max-width:320px;
+}
+.wheel-title-edit:focus{border-bottom-color:var(--blue);color:var(--text)}
+
+/* Wheel canvas wrapper */
+.wheel-outer{
+  position:relative;width:100%;max-width:340px;
+}
+.wheel-outer canvas{width:100%;height:auto;display:block;border-radius:50%;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.12))}
+/* Pointer on right side pointing left */
+.wheel-outer::after{
+  content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);
+  width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;
+  border-right:26px solid #E53935;filter:drop-shadow(-2px 0 4px rgba(0,0,0,0.35));z-index:5;
+}
+.spin-btn{
+  margin-top:12px;width:100%;max-width:340px;padding:13px;
+  border-radius:12px;border:none;font-size:15px;font-family:var(--font);font-weight:800;
+  cursor:pointer;color:#fff;transition:opacity 0.15s,transform 0.1s;letter-spacing:0.02em;
+}
+.spin-btn:hover{opacity:0.9}.spin-btn:active{transform:scale(0.98)}
+.spin-btn:disabled{opacity:0.38;cursor:not-allowed}
+.spin-btn.t{background:linear-gradient(135deg,#1565C0,#0D47A1);box-shadow:0 4px 14px rgba(21,101,192,0.3)}
+.spin-btn.s{background:linear-gradient(135deg,#2E7D32,#1B5E20);box-shadow:0 4px 14px rgba(46,125,50,0.3)}
+.spin-btn.p{background:linear-gradient(135deg,#C62828,#B71C1C)}
+.result-pill{
+  margin-top:8px;width:100%;max-width:340px;text-align:center;
+  font-family:var(--font);font-size:16px;font-weight:800;color:var(--text);
+  background:var(--bg);border-radius:10px;padding:8px 12px;min-height:40px;
+  border:1px solid var(--border);transition:background 0.3s;
+}
+.result-pill.flash{background:#FFF9C4 !important}
+
+/* ── ARCHIVE STRIP ── */
+.archive-strip{
+  background:var(--bg);border-top:1px solid var(--border);
+  padding:10px 16px;display:flex;gap:10px;align-items:center;min-height:64px;
+  overflow-x:auto;
+}
+.archive-strip-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;flex-shrink:0}
+.archive-item{
+  display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:6px 10px;cursor:pointer;transition:border-color 0.15s;
+}
+.archive-item:hover{border-color:var(--blue)}
+.archive-mini-canvas{width:44px;height:44px;border-radius:50%;display:block}
+.archive-name{font-size:10px;font-weight:700;color:var(--muted);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.archive-result{font-size:11px;font-weight:800;color:var(--text);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+
+/* Wheel slide animations */
+.wheel-slide-out{animation:slideDown 0.45s cubic-bezier(.4,0,.2,1) forwards}
+.wheel-slide-in{animation:slideUp 0.45s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes slideDown{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(60px) scale(0.7)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(-60px) scale(0.8)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ── RIGHT PANEL ── */
+.right-panel{
+  background:var(--bg);padding:1rem 1rem 1.5rem;
+  display:flex;flex-direction:column;gap:10px;overflow-y:auto;
+  max-height:calc(100vh - 54px);
+}
+
+/* Sound row */
+.sound-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px}
+.sound-row label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0}
+.sound-row select{flex:1;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:12px;font-family:var(--fontb);background:var(--card);color:var(--text);cursor:pointer;outline:none}
+
+/* Stats row */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;box-shadow:var(--shadow)}
+.stat-val{font-family:var(--font);font-size:26px;font-weight:900;color:var(--text)}
+.stat-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:1px}
+
+/* Answer buttons */
+.ans-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ans-btn{padding:11px 8px;border-radius:10px;border:none;font-size:13px;font-family:var(--font);font-weight:800;cursor:pointer;color:#fff;transition:opacity 0.15s,transform 0.1s;line-height:1.4}
+.ans-btn:hover{opacity:0.9}.ans-btn:active{transform:scale(0.97)}
+.ans-btn:disabled{opacity:0.3;cursor:not-allowed}
+.ans-btn.ok{background:linear-gradient(135deg,#2E7D32,#1B5E20);box-shadow:0 3px 10px rgba(46,125,50,0.25)}
+.ans-btn.no{background:linear-gradient(135deg,#C62828,#B71C1C);box-shadow:0 3px 10px rgba(198,40,40,0.25)}
+
+/* Scoreboard */
+.scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
+.sb-title{font-family:var(--font);font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.score-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)}
+.score-row:last-child{border-bottom:none}
+.score-name{flex:1;font-size:12px;font-weight:700;color:var(--text)}
+.score-bar-bg{flex:2;height:9px;background:var(--bg);border-radius:5px;overflow:hidden}
+.score-bar{height:100%;border-radius:5px;transition:width 0.5s cubic-bezier(.34,1.56,.64,1)}
+.score-pts{font-size:11px;font-weight:700;min-width:36px;text-align:right;color:var(--text)}
+
+/* Setup panel (right side) */
+.setup-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px}
+.setup-panel h4{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px}
+.setup-group{margin-bottom:10px}
+.setup-group label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px}
+.setup-group input,.setup-group textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fontb);background:var(--bg);color:var(--text);resize:vertical;outline:none;transition:border-color 0.15s}
+.setup-group input:focus,.setup-group textarea:focus{border-color:var(--blue);background:var(--card)}
+.setup-group textarea{min-height:70px}
+.setup-hint{font-size:10px;color:var(--muted);margin-top:3px}
+.start-btn{width:100%;padding:11px;border-radius:10px;border:none;font-size:14px;font-family:var(--font);font-weight:800;cursor:pointer;color:#fff;transition:opacity 0.15s,transform 0.1s}
+.start-btn:hover{opacity:0.9}.start-btn:active{transform:scale(0.98)}
+.start-btn.t{background:linear-gradient(135deg,#1565C0,#0D47A1);box-shadow:0 4px 14px rgba(21,101,192,0.28)}
+.start-btn.s{background:linear-gradient(135deg,#2E7D32,#1B5E20);box-shadow:0 4px 14px rgba(46,125,50,0.28)}
+
+/* Dynamic wheel config cards */
+.wheel-config{border:1.5px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color 0.15s}
+.wheel-config.active{border-color:var(--blue)}
+.wheel-config-header{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);cursor:pointer;user-select:none}
+.wheel-config-header:hover{background:#EEF2FF}
+.wheel-check{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;flex-shrink:0}
+.wheel-config-header input.wheel-name-input{flex:1;border:none;background:transparent;font-size:13px;font-family:var(--font);font-weight:700;color:var(--text);outline:none;cursor:text;min-width:0}
+.wheel-config-header input.wheel-name-input::placeholder{color:var(--muted)}
+.wheel-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;flex-shrink:0}
+.wheel-config-body{padding:8px 10px 10px;display:none}
+.wheel-config.open .wheel-config-body{display:block}
+.wheel-color-pick{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}
+.color-dot{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.12s,transform 0.12s}
+.color-dot:hover,.color-dot.sel{border-color:var(--text);transform:scale(1.2)}
+.wheel-config-footer{display:flex;align-items:center;gap:6px;padding:6px 10px 8px;font-size:10px;color:var(--muted)}
+.add-wheel-btn{display:flex;align-items:center;gap:6px;width:100%;padding:8px 10px;border-radius:9px;border:1.5px dashed var(--border);background:transparent;font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--muted);transition:all 0.15s;margin-bottom:10px}
+.add-wheel-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+
+.link-btn{width:100%;padding:9px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--text);text-align:center;transition:background 0.15s}
+.link-btn:hover{background:var(--bg)}
+
+/* Report modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,20,0.55);z-index:200;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal-card{background:var(--card);border-radius:20px;padding:1.75rem;max-width:600px;width:100%;box-shadow:var(--shadow-lg);animation:pop 0.22s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.modal-header h3{font-family:var(--font);font-size:18px;font-weight:900}
+.modal-close{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
+.rep-section{background:var(--bg);border-radius:12px;padding:1rem;margin-bottom:12px}
+.rep-section h4{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)}
+.rep-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+.rep-row:last-child{border-bottom:none}
+.rep-row span:first-child{color:var(--muted)}
+.rep-row span:last-child{font-weight:700;color:var(--text)}
+.dl-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.dl-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--text);transition:background 0.15s}
+.dl-btn:hover{background:var(--bg)}
+
+/* Win overlay */
+.ov{display:none;position:fixed;inset:0;background:rgba(10,10,20,0.5);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.ov.show{display:flex}
+.ov-card{background:var(--card);border-radius:22px;padding:2rem 1.5rem;text-align:center;max-width:310px;width:92%;animation:pop 0.22s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow-lg);border-top:4px solid var(--blue)}
+.ov-emoji{font-size:50px;margin-bottom:10px}
+.ov-title{font-family:var(--font);font-size:21px;font-weight:900;margin-bottom:5px;color:var(--text)}
+.ov-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.55;white-space:pre-line}
+.ov-close{padding:9px 28px;border-radius:11px;border:none;background:linear-gradient(135deg,#1565C0,#0D47A1);color:#fff;font-size:14px;font-family:var(--font);font-weight:800;cursor:pointer}
+
+/* Confetti */
+#cf{position:fixed;inset:0;pointer-events:none;z-index:400;overflow:hidden}
+.cp{position:absolute;opacity:0;animation:cffall 1.7s ease forwards}
+@keyframes cffall{0%{transform:translateY(-30px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(900deg);opacity:0}}
+
+/* FAQ section on homepage */
+.faq-wrap{background:var(--bg);padding:1.5rem 1.5rem 2rem}
+.faq-tabs{display:flex;gap:6px;margin-bottom:1rem}
+.faq-tab{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:var(--fontb);transition:all 0.15s}
+.faq-tab.at{background:var(--blue);color:#fff;border-color:var(--blue)}
+.faq-tab.as{background:var(--green);color:#fff;border-color:var(--green)}
+.faq-list{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;max-width:560px}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-item:last-child{border-bottom:none}
+.faq-q{font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--text);padding:12px 14px;transition:background 0.1s}
+.faq-q:hover{background:var(--bg)}
+.faq-q .arr{transition:transform 0.2s;flex-shrink:0;color:var(--muted)}
+.faq-q.open .arr{transform:rotate(180deg)}
+.faq-a{font-size:12px;color:var(--muted);line-height:1.65;display:none;padding:0 14px 12px}
+.faq-a.open{display:block}
+
+@media(max-width:680px){
+  .main{grid-template-columns:1fr}
+  .right-panel{max-height:none}
+  .left-panel{min-height:auto}
+}
+</style>
+</head>
+<body>
+<div id="cf"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span class="logo">Spin<span>Pick</span></span>
+  <div class="mode-toggle">
+    <button id="btn-t" class="active-t" onclick="switchMode('teacher')">👨‍🏫 Teacher</button>
+    <button id="btn-s" onclick="switchMode('student')">👨‍🎓 Student</button>
+  </div>
+  <div class="topbar-right">
+    <button class="narr-btn" id="narr-btn" onclick="toggleNarration()" title="Cycle: Female → Male → Off">🔇 Voice Off</button>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main" id="main-layout">
+
+  <!-- LEFT: WHEEL STAGE -->
+  <div class="left-panel">
+    <div class="wheel-stage" id="wheel-stage">
+      <input class="wheel-title-edit" id="active-wheel-title" value="📚 Wheel 1 — Topic">
+      <div class="wheel-outer" id="wheel-outer-wrap">
+        <canvas id="active-canvas" width="340" height="340"></canvas>
+      </div>
+      <button class="spin-btn t" id="main-spin-btn" onclick="spinActive()">⟳ Spin</button>
+      <div class="result-pill" id="main-result">Spin to begin</div>
+    </div>
+
+    <!-- ARCHIVE STRIP -->
+    <div class="archive-strip" id="archive-strip">
+      <span class="archive-strip-label">📌 History</span>
+      <span style="font-size:12px;color:var(--muted);font-style:italic" id="archive-empty">Wheels you've spun will appear here</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: CONTROLS -->
+  <div class="right-panel" id="right-panel">
+    <!-- Teacher controls -->
+    <div id="ctrl-teacher">
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-val" id="t-r">0</div><div class="stat-lbl">Rounds</div></div>
+        <div class="stat-box"><div class="stat-val" id="t-c" style="color:#2E7D32">0</div><div class="stat-lbl">Correct</div></div>
+        <div class="stat-box"><div class="stat-val" id="t-w" style="color:#C62828">0</div><div class="stat-lbl">Wrong</div></div>
+      </div>
+      <div class="ans-row">
+        <button class="ans-btn ok" id="t-ok" onclick="tMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
+        <button class="ans-btn no" id="t-no" onclick="tMark(false)" disabled>✗ Wrong<br><small>0 pts</small></button>
+      </div>
+      <div class="scoreboard">
+        <div class="sb-title">🏆 Scoreboard</div>
+        <div id="t-sb"><div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Start the game to see scores</div></div>
+      </div>
+      <button class="link-btn" onclick="showReport('teacher')">📊 View &amp; download report</button>
+      <div class="setup-panel">
+        <h4>⚙️ Class setup</h4>
+        <div class="setup-group">
+          <label>Class name</label>
+          <input id="t-cn" type="text" value="Math Grade 5 — Class 3A">
+        </div>
+        <!-- Dynamic wheel configs for teacher -->
+        <div id="t-wheel-configs"></div>
+        <button class="add-wheel-btn" onclick="addWheelConfig('teacher')">＋ Add another wheel</button>
+        <button class="start-btn t" onclick="startTeacher()">💾 Save settings &amp; start</button>
+      </div>
+    </div>
+
+    <!-- Student controls -->
+    <div id="ctrl-student" style="display:none">
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-val" id="s-r">0</div><div class="stat-lbl">Rounds</div></div>
+        <div class="stat-box"><div class="stat-val" id="s-c" style="color:#2E7D32">0</div><div class="stat-lbl">Correct</div></div>
+        <div class="stat-box"><div class="stat-val" id="s-p" style="color:#C62828">0</div><div class="stat-lbl">Punish</div></div>
+      </div>
+      <div class="ans-row">
+        <button class="ans-btn ok" id="s-ok" onclick="sMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
+        <button class="ans-btn no" id="s-no" onclick="sMark(false)" disabled>✗ Wrong<br><small>Spin W3!</small></button>
+      </div>
+      <div class="scoreboard">
+        <div class="sb-title">🏆 Leaderboard</div>
+        <div id="s-sb"><div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Start the game to see scores</div></div>
+      </div>
+      <button class="link-btn" onclick="showReport('student')">📊 View session results</button>
+      <div class="setup-panel">
+        <h4>⚙️ Game setup</h4>
+        <!-- Dynamic wheel configs for student -->
+        <div id="s-wheel-configs"></div>
+        <button class="add-wheel-btn" onclick="addWheelConfig('student')">＋ Add another wheel</button>
+        <button class="start-btn s" onclick="startStudent()">💾 Save settings &amp; start</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modal-title">📊 Session Report</h3>
+      <button class="modal-close" onclick="closeReport()">✕ Close</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- WIN OVERLAY -->
+<div class="ov" id="ov">
+  <div class="ov-card" id="ov-card">
+    <div class="ov-emoji" id="ov-e"></div>
+    <div class="ov-title" id="ov-t"></div>
+    <div class="ov-sub" id="ov-s"></div>
+    <button class="ov-close" id="ov-btn" onclick="closeOv()">Continue</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   SPINPICK — Full engine
+   Mode: teacher | student
+   Sequential wheels: active wheel → archive on complete
+══════════════════════════════════════════════════════════════════ */
+
+/* ── COLORS ── */
+const C1=['#E53935','#F4511E','#F4B400','#0F9D58','#1967D2','#8E24AA','#00ACC1','#FB8C00','#43A047','#F06292'];
+const C2=['#1967D2','#0F9D58','#8E24AA','#F4511E','#F4B400','#00ACC1','#E53935','#43A047','#FB8C00','#F06292'];
+const CP=['#C62828','#AD1457','#6A1B9A','#1565C0','#00695C','#E65100','#558B2F','#4527A0'];
+const SBC=['#1967D2','#0F9D58','#F4511E','#8E24AA','#FB8C00','#00ACC1'];
+
+/* ── STATE ── */
+let mode='teacher';
+let activeWheel=null; // {items,colors,angle,spinning,greyIdx,key,title}
+let wheelQueue=[]; // wheels waiting to spin next
+let archivedWheels=[]; // spun wheels
+let scores={},punishCt={},topicS={},scoreboardNames=new Set();
+let rounds=0,correct=0,wrongs=0,punishments=0;
+let curTopic=null,curGroup=null,curAsker=null,curAnswerer=null;
+let sessionLog=[];
+let narrationOn=false; // legacy
+let voiceGender='off'; // 'female' | 'male' | 'off'
+let currentSound='kalimba';
+const sessionDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+
+/* ══ AUDIO ENGINE ══════════════════════════════════════════════ */
+let AC=null;
+function getCtx(){
+  if(!AC){
+    AC=new(window.AudioContext||window.webkitAudioContext)();
+    const c=AC.createDynamicsCompressor();
+    c.threshold.value=-10;c.knee.value=8;c.ratio.value=3;c.attack.value=0.004;c.release.value=0.15;
+    c.connect(AC.destination);
+    const d=AC.createDelay(0.06);const dg=AC.createGain();
+    d.delayTime.value=0.055;dg.gain.value=0.16;d.connect(dg);dg.connect(c);
+    AC._o=c;AC._d=d;
+  }
+  return AC;
+}
+function out(){getCtx();return AC._o;}
+function dly(){getCtx();return AC._d;}
+
+function kalimba(freq,vol=0.22,when=0,tail=0.9){
+  try{
+    const c=getCtx(),t=c.currentTime+when;
+    const o=c.createOscillator(),g=c.createGain();
+    o.type='sine';o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0.001,t);g.gain.linearRampToValueAtTime(vol,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.001,t+tail);
+    o.connect(g);g.connect(out());g.connect(dly());o.start(t);o.stop(t+tail+0.05);
+    const o2=c.createOscillator(),g2=c.createGain();
+    o2.type='sine';o2.frequency.setValueAtTime(freq*4.03,t);
+    g2.gain.setValueAtTime(0.001,t);g2.gain.linearRampToValueAtTime(vol*0.2,t+0.006);
+    g2.gain.exponentialRampToValueAtTime(0.001,t+tail*0.35);
+    o2.connect(g2);g2.connect(out());o2.start(t);o2.stop(t+tail*0.38);
+  }catch(e){}
+}
+const PENTA=[262,294,330,392,440,523,587,659,784,880];
+const CHIME_F=[1047,1175,1319,1568,1760,2093];
+
+function playWinSound(){[262,330,392,523].forEach((f,i)=>kalimba(f,0.28,i*0.11,1.1));kalimba(784,0.14,0.52,1.2);kalimba(1047,0.09,0.64,1.0);}
+function playLoseSound(){[523,440,349,294].forEach((f,i)=>kalimba(f,0.16,i*0.13,0.9));}
+function playPunishSound(){[330,392,523,659,784].forEach((f,i)=>kalimba(f,0.18,i*0.07,0.5));}
+
+let tickTimer=null,spinGain=null,spinFadeRaf=null;
+let kNoteIdx=0;
+
+function startSpinSound(duration){
+  stopSpinSound();
+  try{
+    const c=getCtx();c.resume();
+    spinGain=c.createGain();spinGain.gain.setValueAtTime(1,c.currentTime);spinGain.connect(out());
+    const t0=Date.now();kNoteIdx=0;
+    const CHIME=[1047,1175,1319,1568,1760,2093];
+    function tick(){
+      const el=Date.now()-t0,pct=Math.min(el/duration,1);
+      if(pct>=1){stopSpinSound();return;}
+      let iv=pct<0.45?90-pct/0.45*62:28+Math.pow((pct-0.45)/0.55,2.2)*252;
+      const vol=pct>0.75?0.16*(1-(pct-0.75)/0.25):0.18+(pct<0.5?pct:1-pct)*0.1;
+      const snd=currentSound;
+      if(snd==='kalimba'){
+        kNoteIdx=(kNoteIdx+(pct<0.5?1:-1)+PENTA.length)%PENTA.length;
+        plinkThru(PENTA[kNoteIdx],vol,spinGain);
+      } else if(snd==='chime'){
+        chimeThru(CHIME[Math.floor(Math.random()*CHIME.length)],vol*0.9,spinGain);
+      } else if(snd==='casino'){
+        casinoThru(vol,spinGain);
+      } else if(snd==='drum'){
+        drumThru(vol,spinGain);
+      }
+      const fadeStart=duration*0.6,fadeDur=duration*0.4;
+      if(el>fadeStart&&spinGain){
+        const fp=Math.min((el-fadeStart)/fadeDur,1);
+        try{spinGain.gain.setValueAtTime(Math.max(0,1-Math.pow(fp,1.5)),c.currentTime);}catch(e){}
+      }
+      tickTimer=setTimeout(tick,Math.max(16,iv));
+    }
+    tick();
+  }catch(e){}
+}
+function stopSpinSound(){
+  if(tickTimer){clearTimeout(tickTimer);tickTimer=null;}
+  if(spinFadeRaf){cancelAnimationFrame(spinFadeRaf);spinFadeRaf=null;}
+  if(spinGain){try{spinGain.gain.setValueAtTime(0,getCtx().currentTime);spinGain.disconnect();}catch(e){}spinGain=null;}
+}
+function plinkThru(freq,vol,dest){
+  try{const c=getCtx(),t=c.currentTime;
+    const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.18);
+    const o2=c.createOscillator(),g2=c.createGain();o2.type='triangle';o2.frequency.setValueAtTime(freq*2,t);
+    g2.gain.setValueAtTime(vol*0.14,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.07);
+    o2.connect(g2);g2.connect(dest);o2.start(t);o2.stop(t+0.09);
+  }catch(e){}
+}
+function chimeThru(freq,vol,dest){
+  try{const c=getCtx(),t=c.currentTime;
+    const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0.001,t);g.gain.linearRampToValueAtTime(vol,t+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.6);
+  }catch(e){}
+}
+function casinoThru(vol,dest){
+  try{const c=getCtx(),t=c.currentTime;
+    const buf=c.createBuffer(1,c.sampleRate*0.025,c.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1);
+    const src=c.createBufferSource(),g=c.createGain(),bp=c.createBiquadFilter();
+    bp.type='bandpass';bp.frequency.value=3200;bp.Q.value=2.5;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.022);
+    src.buffer=buf;src.connect(bp);bp.connect(g);g.connect(dest);src.start(t);
+    const o=c.createOscillator(),g2=c.createGain();o.type='sine';o.frequency.setValueAtTime(1800,t);
+    g2.gain.setValueAtTime(vol*0.3,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.07);o.connect(g2);g2.connect(dest);o.start(t);o.stop(t+0.08);
+  }catch(e){}
+}
+function drumThru(vol,dest){
+  try{
+    const c=getCtx(),t=c.currentTime;
+    // Snare-like: shaped noise burst
+    const buf=c.createBuffer(1,Math.ceil(c.sampleRate*0.08),c.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(c.sampleRate*0.025));
+    const src=c.createBufferSource(),g=c.createGain();
+    const hp=c.createBiquadFilter();
+    hp.type='highpass'; hp.frequency.value=180;
+    // Higher vol, slower decay so it cuts through the master fade
+    g.gain.setValueAtTime(vol*1.8, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+0.08);
+    src.buffer=buf; src.connect(hp); hp.connect(g); g.connect(dest); src.start(t);
+    // Body thud - sine pitch drop
+    const o=c.createOscillator(),g2=c.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(180,t);
+    o.frequency.exponentialRampToValueAtTime(55,t+0.07);
+    g2.gain.setValueAtTime(vol*1.4,t);
+    g2.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+    o.connect(g2); g2.connect(dest); o.start(t); o.stop(t+0.1);
+  }catch(e){}
+}
+
+/* ══ WHEEL DRAWING ══════════════════════════════════════════════ */
+function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1){
+  if(!canvas)return;
+  const sz=canvas.width,ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,sz,sz);
+  const cx=sz/2,cy=sz/2,r=sz/2-3,n=items.length,slice=2*Math.PI/n;
+  for(let i=0;i<n;i++){
+    const a0=angle+i*slice,a1=a0+slice;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a0,a1);ctx.closePath();
+    ctx.fillStyle=i===greyIdx?'#BBBBBB':colors[i%colors.length];ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.75)';ctx.lineWidth=2.5;ctx.stroke();
+  }
+  for(let i=0;i<n;i++){
+    const mid=angle+i*slice+slice/2;
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(mid);
+    const fs=Math.max(10,Math.min(17,Math.floor(sz*0.054)));
+    ctx.font=`800 ${fs}px 'Nunito',Arial,sans-serif`;
+    ctx.fillStyle=i===greyIdx?'rgba(255,255,255,0.4)':'#fff';
+    ctx.textAlign='right';ctx.shadowColor='rgba(0,0,0,0.55)';ctx.shadowBlur=4;
+    const mc=Math.max(5,Math.floor(r*0.38));
+    ctx.fillText(items[i].length>mc?items[i].slice(0,mc)+'…':items[i],r-12,fs*0.37);
+    ctx.restore();
+  }
+  ctx.beginPath();ctx.arc(cx,cy,sz*0.065,0,2*Math.PI);
+  ctx.fillStyle='#fff';ctx.shadowColor='rgba(0,0,0,0.2)';ctx.shadowBlur=6;ctx.fill();ctx.shadowBlur=0;
+}
+
+function getWinnerFromWheel(w){
+  const n=w.items.length,slice=2*Math.PI/n;
+  const offset=((-w.angle)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+  return w.items[Math.floor(offset/slice)%n];
+}
+
+function redrawActive(){
+  if(!activeWheel)return;
+  const c=document.getElementById('active-canvas');
+  if(c)drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+}
+
+/* ══ WHEEL QUEUE SYSTEM ════════════════════════════════════════
+   wheelQueue holds wheels not yet shown.
+   When a wheel is done spinning → archive it → load next from queue.
+══════════════════════════════════════════════════════════════ */
+function loadNextWheel(animate=true){
+  if(wheelQueue.length===0){
+    // No more wheels — disable spin
+    document.getElementById('main-spin-btn').disabled=true;
+    document.getElementById('main-spin-btn').textContent='✓ All wheels spun';
+    return;
+  }
+  const next=wheelQueue.shift();
+  if(animate&&activeWheel){
+    // Slide current stage out, slide new one in
+    const outer=document.getElementById('wheel-outer-wrap');
+    outer.classList.add('wheel-slide-out');
+    setTimeout(()=>{
+      outer.classList.remove('wheel-slide-out');
+      activeWheel=next;
+      syncActiveToDOM();
+      outer.classList.add('wheel-slide-in');
+      setTimeout(()=>outer.classList.remove('wheel-slide-in'),460);
+    },460);
+  } else {
+    activeWheel=next;
+    syncActiveToDOM();
+  }
+}
+
+function syncActiveToDOM(){
+  if(!activeWheel)return;
+  document.getElementById('active-wheel-title').value=activeWheel.title||'Wheel';
+  const c=document.getElementById('active-canvas');
+  const sz=c.parentElement.clientWidth||340;
+  c.width=sz;c.height=sz;
+  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+  const btn=document.getElementById('main-spin-btn');
+  btn.disabled=false;
+  btn.textContent=`⟳ Spin ${activeWheel.title||'wheel'}`;
+  btn.className='spin-btn '+(mode==='teacher'?'t':activeWheel.key==='s3'?'p':'s');
+  document.getElementById('main-result').textContent='—';
+  document.getElementById('main-result').classList.remove('flash');
+}
+
+function archiveWheel(w,resultText){
+  archivedWheels.push({...w,result:resultText});
+  const strip=document.getElementById('archive-strip');
+  // Remove empty message
+  const empty=document.getElementById('archive-empty');
+  if(empty)empty.remove();
+  // Create mini canvas
+  const item=document.createElement('div');item.className='archive-item';
+  item.title=`${w.title}: ${resultText}`;
+  const mc=document.createElement('canvas');mc.className='archive-mini-canvas';mc.width=44;mc.height=44;
+  drawWheelOnCanvas(mc,w.items,w.colors,w.angle,w.greyIdx);
+  const nm=document.createElement('div');nm.className='archive-name';nm.textContent=w.title||'Wheel';
+  const rs=document.createElement('div');rs.className='archive-result';rs.textContent=resultText;
+  item.appendChild(mc);item.appendChild(nm);item.appendChild(rs);
+  strip.appendChild(item);
+}
+
+/* ══ SPIN ACTION ══════════════════════════════════════════════ */
+function spinActive(){
+  if(!activeWheel||activeWheel.spinning)return;
+  try{getCtx().resume();}catch(e){}
+  // Switch to this wheel's assigned sound
+  if (activeWheel.soundKey) currentSound = activeWheel.soundKey;
+  activeWheel.spinning=true;
+  document.getElementById('main-spin-btn').disabled=true;
+  const totalRot=(5+Math.random()*5)*2*Math.PI;
+  const dur=2800+Math.random()*700;
+  const t0=performance.now(),a0=activeWheel.angle;
+  const c=document.getElementById('active-canvas');
+  startSpinSound(dur);
+  function frame(now){
+    const pct=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-pct,4);
+    activeWheel.angle=a0+totalRot*ease;
+    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+    if(pct<1){requestAnimationFrame(frame);return;}
+    stopSpinSound();
+    activeWheel.spinning=false;
+    // Get winner — if greyIdx matches, nudge
+    let winner=getWinnerFromWheel(activeWheel);
+    if(activeWheel.greyIdx>=0&&winner===activeWheel.items[activeWheel.greyIdx]){
+      activeWheel.angle+=(2*Math.PI/activeWheel.items.length);
+      drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+      winner=getWinnerFromWheel(activeWheel);
+    }
+    // Flash result
+    const rp=document.getElementById('main-result');
+    rp.textContent=winner;
+    rp.classList.add('flash');
+    setTimeout(()=>rp.classList.remove('flash'),800);
+    // Voice narration: speak "[name], [phrase]" if this wheel has voice enabled
+    const phrase = (activeWheel.narration || '').trim();
+    const voiceEnabled = activeWheel.voiceOn !== false; // default true per wheel
+    if (voiceEnabled) {
+      speakAlways(phrase ? winner + ', ' + phrase : winner);
+    }
+    // Handle based on key
+    onWheelResult(activeWheel.key, winner);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ══ DYNAMIC WHEEL CONFIG SYSTEM ══════════════════════════════════
+   Each mode has an array of wheel config objects:
+   { id, title, items:string, colors:string[], enabled:bool, isOpen:bool }
+   Title input → live-updates wheel stage title + spin button text.
+   Checkbox → enables/disables wheel in queue.
+   Color picker → changes wheel palette.
+   Add wheel → appends a new blank config.
+   Delete → removes (min 1 must remain).
+══════════════════════════════════════════════════════════════════ */
+
+const COLOR_PALETTES = [
+  ['#E53935','#F4511E','#F4B400','#0F9D58','#1967D2','#8E24AA','#00ACC1','#FB8C00','#43A047','#F06292'],
+  ['#1967D2','#0F9D58','#8E24AA','#F4511E','#F4B400','#00ACC1','#E53935','#43A047','#FB8C00','#F06292'],
+  ['#C62828','#AD1457','#6A1B9A','#1565C0','#00695C','#E65100','#558B2F','#4527A0','#00838F','#558B2F'],
+  ['#FF7043','#FFCA28','#66BB6A','#42A5F5','#AB47BC','#26C6DA','#EF5350','#FFA726','#26A69A','#EC407A'],
+];
+const PALETTE_PREVIEWS = ['🔴','🔵','🟣','🟠'];
+
+let teacherWheelConfigs = [];
+let studentWheelConfigs = [];
+
+const T_DEFAULTS = [
+  { title:'📚 Wheel 1 — Topics', items:'Fractions\nDecimals\nGeometry\nAlgebra\nWord Problems', paletteIdx:0, soundKey:'kalimba', narration:'is the topic!', voiceOn:true, enabled:true },
+  { title:'👥 Wheel 2 — Groups', items:'Group A\nGroup B\nGroup C\nGroup D', paletteIdx:1, soundKey:'chime', narration:'please answer!', voiceOn:true, enabled:true },
+];
+const S_DEFAULTS = [
+  { title:'❓ Wheel 1 — Askers',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', voiceOn:true, enabled:true },
+  { title:'🙋 Wheel 2 — Answerers',   items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:1, soundKey:'chime',   narration:'please answer!', voiceOn:true, enabled:true },
+  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', voiceOn:true, enabled:true },
+];
+
+function initWheelConfigs() {
+  teacherWheelConfigs = T_DEFAULTS.map((d,i) => ({...d, id:'t-wc-'+i}));
+  studentWheelConfigs = S_DEFAULTS.map((d,i) => ({...d, id:'s-wc-'+i}));
+  renderWheelConfigs('teacher');
+  renderWheelConfigs('student');
+}
+
+function getConfigs(m) { return m==='teacher' ? teacherWheelConfigs : studentWheelConfigs; }
+function getContainerId(m) { return m==='teacher' ? 't-wheel-configs' : 's-wheel-configs'; }
+
+/* ── renderWheelConfigs: builds each wheel card UI ────────────────
+   Each card has: title input, checkbox, items textarea,
+   colour picker, sound selector, custom narration input.
+──────────────────────────────────────────────────────────────── */
+function renderWheelConfigs(m) {
+  const configs = getConfigs(m);
+  const container = document.getElementById(getContainerId(m));
+  if (!container) return;
+  container.innerHTML = '';
+
+  const SOUNDS = [
+    {key:'kalimba', label:'🎵 Kalimba'},
+    {key:'chime',   label:'🔔 Chime'},
+    {key:'casino',  label:'🎰 Roulette'},
+    {key:'drum',    label:'🥁 Drum'},
+  ];
+
+  configs.forEach((cfg, idx) => {
+    const canDelete  = configs.length > 1;
+    const modeColor  = m==='teacher' ? 'var(--blue)' : 'var(--green)';
+    const modeBg     = m==='teacher' ? 'var(--blue-l)' : 'var(--green-l)';
+
+    // Colour dots
+    const dots = COLOR_PALETTES.map((pal, pi) =>
+      `<div class="color-dot ${cfg.paletteIdx===pi?'sel':''}"
+        style="background:linear-gradient(135deg,${pal[0]},${pal[2]},${pal[4]})"
+        onclick="setPalette('${m}',${idx},${pi})" title="Palette ${pi+1}"></div>`
+    ).join('');
+
+    // Sound buttons
+    const soundBtns = SOUNDS.map(s =>
+      `<button onclick="setWheelSound('${m}',${idx},'${s.key}')"
+        style="padding:3px 7px;border-radius:7px;
+          border:1.5px solid ${cfg.soundKey===s.key ? modeColor : 'var(--border)'};
+          background:${cfg.soundKey===s.key ? modeBg : 'transparent'};
+          color:${cfg.soundKey===s.key ? modeColor : 'var(--muted)'};
+          font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap"
+        >${s.label}</button>`
+    ).join('');
+
+    const itemCount = cfg.items.split('\n').filter(s=>s.trim()).length;
+    const narration = cfg.narration || '';
+
+    const div = document.createElement('div');
+    div.className = 'wheel-config' + (cfg.enabled?' active':'') + (cfg.isOpen?' open':'');
+    div.id = cfg.id;
+    div.innerHTML = `
+      <div class="wheel-config-header" onclick="toggleConfigOpen('${m}',${idx})">
+        <input type="checkbox" class="wheel-check" ${cfg.enabled?'checked':''}
+          onclick="event.stopPropagation();toggleConfigEnabled('${m}',${idx})"
+          title="Include this wheel">
+        <input class="wheel-name-input" type="text" value="${cfg.title.replace(/"/g,'&quot;')}"
+          placeholder="Wheel name..."
+          onclick="event.stopPropagation()"
+          oninput="updateConfigTitle('${m}',${idx},this.value)"
+          title="Click to rename">
+        <span class="wheel-badge" style="background:${modeBg};color:${modeColor}">
+          ${cfg.enabled?'ON':'OFF'}
+        </span>
+        <span style="font-size:12px;color:var(--muted)">${cfg.isOpen?'▲':'▼'}</span>
+      </div>
+      <div class="wheel-config-body">
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Items (one per line)</div>
+        <textarea
+          style="width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fontb);background:var(--bg);color:var(--text);resize:vertical;min-height:80px;outline:none"
+          oninput="updateConfigItems('${m}',${idx},this.value)"
+          onfocus="this.style.borderColor='var(--blue)';this.style.background='var(--card)'"
+          onblur="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+        >${cfg.items}</textarea>
+
+        <!-- Colour + Sound side by side -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">🎨 Wheel colour</div>
+            <div class="wheel-color-pick">${dots}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">🔊 Spin sound</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">${soundBtns}</div>
+          </div>
+        </div>
+
+        <!-- Custom narration -->
+        <div style="margin-top:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">
+            🗣 After spin — voice says: <span style="font-weight:400;text-transform:none;letter-spacing:0">[name] + your phrase</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0">[Name]</span>
+            <input type="text"
+              value="${narration.replace(/"/g,'&quot;')}"
+              maxlength="40"
+              placeholder="please answer! (optional)"
+              oninput="updateNarration('${m}',${idx},this.value)"
+              onfocus="this.style.borderColor='var(--blue)'"
+              onblur="this.style.borderColor='var(--border)'"
+              style="flex:1;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:12px;font-family:var(--fontb);background:var(--bg);color:var(--text);outline:none">
+            <span id="narr-char-${m}-${idx}" style="font-size:10px;color:var(--muted);flex-shrink:0;min-width:28px;text-align:right">${narration.length}/40</span>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">Max 40 chars (~3–5 sec). Example: <em>"please answer!"</em> or <em>"your turn 🎉"</em></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:10px;color:var(--muted)">${itemCount} items</span>
+            <button onclick="toggleWheelVoice('${m}',${idx})"
+              style="padding:3px 9px;border-radius:7px;
+                border:1.5px solid ${cfg.voiceOn ? modeColor : 'var(--border)'};
+                background:${cfg.voiceOn ? modeBg : 'transparent'};
+                color:${cfg.voiceOn ? modeColor : 'var(--muted)'};
+                font-size:11px;font-weight:700;cursor:pointer"
+              title="Toggle voice narration for this wheel">
+              ${cfg.voiceOn ? '🔊 Voice ON' : '🔇 Voice OFF'}
+            </button>
+          </div>
+          ${canDelete
+            ? `<button onclick="deleteWheelConfig('${m}',${idx})"
+                style="padding:3px 10px;border-radius:6px;border:1px solid var(--red-l);background:var(--red-l);color:var(--red);font-size:11px;font-weight:700;cursor:pointer">🗑 Remove</button>`
+            : '<span style="font-size:10px;color:var(--muted)">Min 1 wheel</span>'}
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function toggleConfigOpen(m, idx) {
+  const configs = getConfigs(m);
+  configs[idx].isOpen = !configs[idx].isOpen;
+  renderWheelConfigs(m);
+}
+
+function toggleConfigEnabled(m, idx) {
+  const configs = getConfigs(m);
+  configs[idx].enabled = !configs[idx].enabled;
+  renderWheelConfigs(m);
+  // Live update: if this is the active wheel, update its badge
+  syncActiveTitleFromConfigs();
+}
+
+function updateConfigTitle(m, idx, val) {
+  const configs = getConfigs(m);
+  configs[idx].title = val;
+  // Live update active wheel stage title — no re-render needed
+  if (activeWheel && activeWheel.configRef === configs[idx]) {
+    const titleEl = document.getElementById('active-wheel-title');
+    if (titleEl) titleEl.value = val;
+    const btn = document.getElementById('main-spin-btn');
+    if (btn && !btn.disabled) btn.textContent = '⟳ Spin ' + (val||'wheel');
+  }
+  // Update badge in-place only — never call renderWheelConfigs here (destroys input focus)
+  const cfgEl = document.getElementById(configs[idx].id);
+  if (cfgEl) {
+    const badge = cfgEl.querySelector('.wheel-badge');
+    if (badge) badge.textContent = configs[idx].enabled ? 'ON' : 'OFF';
+  }
+}
+
+function renderWheelConfigBadge(m, idx) { /* no-op — badge updated in-place */ }
+
+function renderWheelConfigBadge(m, idx) {
+  // Lightweight update — just re-render that one config
+  renderWheelConfigs(m);
+}
+
+function updateConfigItems(m, idx, val) {
+  const configs = getConfigs(m);
+  configs[idx].items = val;
+  // Update item count label live
+  const container = document.getElementById(getContainerId(m));
+  const bodies = container.querySelectorAll('.wheel-config-body');
+  if (bodies[idx]) {
+    const countEl = bodies[idx].querySelector('span[style*="10px"]');
+    if (countEl) countEl.textContent = val.split('\n').filter(s=>s.trim()).length + ' items';
+  }
+}
+
+function setPalette(m, idx, pi) {
+  const configs = getConfigs(m);
+  configs[idx].paletteIdx = pi;
+  // Instantly update active wheel if it's this config
+  if (activeWheel && activeWheel.configRef === configs[idx]) {
+    activeWheel.colors = COLOR_PALETTES[pi];
+    const c = document.getElementById('active-canvas');
+    if (c) drawWheelOnCanvas(c, activeWheel.items, activeWheel.colors, activeWheel.angle, activeWheel.greyIdx);
+  }
+  // Update color dots in-place — no full re-render (keeps focus)
+  const cfgEl = document.getElementById(configs[idx].id);
+  if (cfgEl) {
+    cfgEl.querySelectorAll('.color-dot').forEach((dot, di) => {
+      dot.classList.toggle('sel', di === pi);
+    });
+  }
+}
+
+function setWheelSound(m, idx, key) {
+  const configs = getConfigs(m);
+  configs[idx].soundKey = key;
+  renderWheelConfigs(m);
+  if (activeWheel && activeWheel.configRef === configs[idx]) currentSound = key;
+}
+
+function updateNarration(m, idx, val) {
+  const configs = getConfigs(m);
+  const trimmed = val.slice(0, 40);
+  configs[idx].narration = trimmed;
+  const counter = document.getElementById('narr-char-' + m + '-' + idx);
+  if (counter) counter.textContent = trimmed.length + '/40';
+  if (activeWheel && activeWheel.configRef === configs[idx]) activeWheel.narration = trimmed;
+}
+
+function toggleWheelVoice(m, idx) {
+  const configs = getConfigs(m);
+  configs[idx].voiceOn = !configs[idx].voiceOn;
+  // Update active wheel live
+  if (activeWheel && activeWheel.configRef === configs[idx]) {
+    activeWheel.voiceOn = configs[idx].voiceOn;
+  }
+  // Update button in-place — no full re-render (avoids focus loss)
+  const cfgEl = document.getElementById(configs[idx].id);
+  if (cfgEl) {
+    const modeColor = m==='teacher' ? 'var(--blue)' : 'var(--green)';
+    const modeBg    = m==='teacher' ? 'var(--blue-l)' : 'var(--green-l)';
+    const vBtn = cfgEl.querySelectorAll('button');
+    vBtn.forEach(btn => {
+      if (btn.textContent.includes('Voice')) {
+        const on = configs[idx].voiceOn;
+        btn.textContent = on ? '🔊 Voice ON' : '🔇 Voice OFF';
+        btn.style.border = `1.5px solid ${on ? modeColor : 'var(--border)'}`;
+        btn.style.background = on ? modeBg : 'transparent';
+        btn.style.color = on ? modeColor : 'var(--muted)';
+      }
+    });
+  }
+}
+
+function addWheelConfig(m) {
+  const configs = getConfigs(m);
+  const num = configs.length + 1;
+  configs.push({
+    id: m+'-wc-'+Date.now(),
+    title: `🎯 Wheel ${num}`,
+    items: 'Item 1\nItem 2\nItem 3',
+    paletteIdx: num % COLOR_PALETTES.length,
+    soundKey: 'kalimba',
+    narration: 'your turn!',
+    voiceOn: true,
+    enabled: true,
+    isOpen: true,
+  });
+  renderWheelConfigs(m);
+}
+
+function deleteWheelConfig(m, idx) {
+  const configs = getConfigs(m);
+  if (configs.length <= 1) return;
+  configs.splice(idx, 1);
+  renderWheelConfigs(m);
+}
+
+function syncActiveTitleFromConfigs() {
+  // Called after toggle — no-op if no active wheel
+}
+
+/* ── Build queue from configs ──────────────────────────────── */
+function buildQueueFromConfigs(m) {
+  const configs = getConfigs(m);
+  const enabled = configs.filter(c => c.enabled);
+  if (enabled.length === 0) return [];
+  return enabled.map((cfg, i) => {
+    const items = cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
+    const colors = COLOR_PALETTES[cfg.paletteIdx] || C1;
+    const offset = i === 1 && items.length >= 2 ? (2*Math.PI/items.length)*1.5 : 0;
+    const w = buildWheel('custom-'+i, cfg.title, items, colors, offset);
+    w.configRef  = cfg;
+    w.soundKey   = cfg.soundKey  || 'kalimba';
+    w.narration  = cfg.narration || '';
+    w.voiceOn    = cfg.voiceOn !== false; // default true
+    w.isLastWheel = false;
+    return w;
+  });
+}
+
+/* ══ START GAMES (rewritten to use configs) ══════════════════ */
+function startTeacher() {
+  const queue = buildQueueFromConfigs('teacher');
+  if (queue.length === 0) { alert('Enable at least 1 wheel.'); return; }
+  for (const w of queue) {
+    if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
+  }
+  scores={}; topicS={}; scoreboardNames=new Set(); rounds=correct=wrongs=0; sessionLog=[]; archivedWheels=[];
+  // Only the LAST wheel's items go on the scoreboard (groups/answerers)
+  const lastW = queue[queue.length-1];
+  lastW.items.forEach(item => { scores[item]=0; scoreboardNames.add(item); });
+  // Non-last wheels still need score entries if they score (e.g. single-wheel mode)
+  if (queue.length === 1) queue[0].items.forEach(item => { if(!scores[item]) scores[item]=0; scoreboardNames.add(item); });
+  clearArchive();
+  // Tag last wheel
+  queue[queue.length-1].isLastWheel = true;
+  wheelQueue = queue;
+  loadNextWheel(false);
+  updateTSB();
+  collapseAllWheels('teacher');
+}
+
+function startStudent() {
+  const queue = buildQueueFromConfigs('student');
+  if (queue.length === 0) { alert('Enable at least 1 wheel.'); return; }
+  for (const w of queue) {
+    if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
+  }
+  scores={}; punishCt={}; scoreboardNames=new Set(); rounds=correct=wrongs=punishments=0; sessionLog=[]; archivedWheels=[];
+  // Collect ALL player names across non-punishment wheels for scoring
+  queue.forEach((w,wi) => {
+    const isPunish = (w.title||'').toLowerCase().includes('punish') || w.title.includes('😂');
+    if (!isPunish) {
+      w.items.forEach(item => { if(!scores[item]) scores[item]=0; scoreboardNames.add(item); });
+    }
+  });
+  // punishCt only for players in scoreboardNames
+  scoreboardNames.forEach(item => {
+    if(!punishCt[item]) punishCt[item]=0;
+  });
+  clearArchive();
+  queue[queue.length-1].isLastWheel = true;
+  wheelQueue = queue;
+  loadNextWheel(false);
+  updateSSB();
+  collapseAllWheels('student');
+}
+
+/* ══ REWRITE onWheelResult for generic multi-wheel ══════════ */
+function onWheelResult(key, winner) {
+  archiveWheel(activeWheel, winner);
+
+  const isLast = activeWheel.isLastWheel || wheelQueue.length === 0;
+  const wTitle = activeWheel.title || 'Wheel';
+
+  // Track curAsker / curTopic for grey-out on next wheel
+  if (!curAsker) curAsker = winner;
+  else if (!curAnswerer) curAnswerer = winner;
+  else if (!curTopic) curTopic = winner;
+  else curGroup = winner;
+
+  // Grey out the winner on the NEXT wheel if same items exist (anti-duplicate)
+  if (wheelQueue.length > 0) {
+    const nextW = wheelQueue[0];
+    const gi = nextW.items.indexOf(winner);
+    if (gi >= 0) nextW.greyIdx = gi;
+  }
+
+  if (isLast) {
+    // All wheels done — show summary popup, enable answer buttons
+    const allResults = archivedWheels.map(w=>w.result).join(' → ');
+    if (mode === 'teacher') {
+      showOv('🎯', 'Ready to answer!', `${allResults}\n\nMark the answer above ↑`, 'info');
+      document.getElementById('t-ok').disabled = false;
+      document.getElementById('t-no').disabled = false;
+    } else {
+      // Check if last wheel is a punishment wheel (no answer needed)
+      const lastTitle = (activeWheel.title||'').toLowerCase();
+      const isPunishment = lastTitle.includes('punish') || lastTitle.includes('😂');
+      if (isPunishment) {
+        punishments++;
+        document.getElementById('s-p').textContent = punishments;
+        if (curAnswerer) punishCt[curAnswerer] = (punishCt[curAnswerer]||0)+1;
+        if (curAsker) scores[curAsker] = (scores[curAsker]||0)+5;
+        playPunishSound();
+        showOv('😂', (curAnswerer||'Someone')+' gets punished!',
+          winner + (curAsker ? '\n\n🎤 '+curAsker+' gets +5!' : ''), 'punish');
+        updateSSB();
+        resetRound();
+      } else if (curAsker && curAnswerer) {
+        showOv('🙋', `${curAsker} → ${curAnswerer}`,
+          `${curAsker} asks.\n${curAnswerer} must answer!\n\nMark the answer above ↑`, 'info');
+        document.getElementById('s-ok').disabled = false;
+        document.getElementById('s-no').disabled = false;
+      } else {
+        showOv('🎯', 'All wheels spun!', allResults + '\n\nMark the answer above ↑', 'info');
+        document.getElementById('s-ok').disabled = false;
+        document.getElementById('s-no').disabled = false;
+      }
+    }
+    document.getElementById('main-spin-btn').disabled = true;
+    document.getElementById('main-spin-btn').textContent = 'Mark answer ↑';
+  } else {
+    // More wheels to go — show brief popup and advance
+    showOv('🎯', `${wTitle}`, `Result: ${winner}\n\nNext: ${wheelQueue[0].title}`, 'info');
+    loadNextWheel(true);
+  }
+}
+
+/* ══ MARK ANSWER (updated for generic multi-wheel) ══════════ */
+function tMark(ok) {
+  rounds++; document.getElementById('t-r').textContent=rounds;
+  const topic = archivedWheels[0]?.result || curAsker || '—';
+  const group  = archivedWheels[1]?.result || curAnswerer || '—';
+  if (!topicS[topic]) topicS[topic]={c:0,w:0};
+  if (ok) {
+    correct++; document.getElementById('t-c').textContent=correct;
+    if (scores[group]!==undefined) scores[group]=(scores[group]||0)+10;
+    topicS[topic].c++;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Correct',points:10});
+    playWinSound(); launchConfetti();
+    showOv('🎉', `${group} correct!`, `+10 points! 🏆`, 'win');
+  } else {
+    wrongs++; document.getElementById('t-w').textContent=wrongs;
+    topicS[topic].w++;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Wrong',points:0});
+    playLoseSound();
+    showOv('😢','Incorrect!',`${group} — 0 points this round`,'lose');
+  }
+  updateTSB();
+  document.getElementById('t-ok').disabled=true;
+  document.getElementById('t-no').disabled=true;
+  resetRound();
+  // Queue next round
+  const q = buildQueueFromConfigs('teacher');
+  if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
+}
+
+function sMark(ok) {
+  rounds++; document.getElementById('s-r').textContent=rounds;
+  const answerer = curAnswerer || archivedWheels[1]?.result || '—';
+  const asker    = curAsker    || archivedWheels[0]?.result || '—';
+  if (ok) {
+    correct++; document.getElementById('s-c').textContent=correct;
+    if (scores[answerer]!==undefined) scores[answerer]=(scores[answerer]||0)+10;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Correct',points:10});
+    playWinSound(); launchConfetti();
+    showOv('🎉',`${answerer} nailed it!`,`+10 points! 🏆\n🎤 ${asker} asked great!`,'win');
+    updateSSB(); resetRound();
+    // Queue next round
+    const q = buildQueueFromConfigs('student');
+    if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
+  } else {
+    playLoseSound();
+    document.getElementById('s-ok').disabled=true;
+    document.getElementById('s-no').disabled=true;
+    // Find punishment wheel in configs (last enabled)
+    const configs = studentWheelConfigs.filter(c=>c.enabled);
+    const punishCfg = configs.find(c=>(c.title||'').toLowerCase().includes('punish')||c.title.includes('😂'));
+    if (punishCfg) {
+      const items = punishCfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
+      const pw = buildWheel('punish', punishCfg.title, COLOR_PALETTES[punishCfg.paletteIdx]||CP, items);
+      // fix arg order
+      pw.items = items; pw.colors = COLOR_PALETTES[punishCfg.paletteIdx]||CP;
+      pw.isLastWheel = true;
+      wheelQueue = [pw];
+    } else {
+      // No punishment wheel configured — just show loss
+      const q = buildQueueFromConfigs('student');
+      if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; }
+    }
+    showOv('😢',`${answerer} got it wrong!`,`Spin punishment wheel! 👇\n🎤 ${asker} will get +5 if punished!`,'lose');
+    loadNextWheel(true);
+  }
+}
+
+function resetRound() {
+  curAsker=null; curAnswerer=null; curTopic=null; curGroup=null;
+  archivedWheels=[];
+  document.getElementById('t-ok').disabled=true;
+  document.getElementById('t-no').disabled=true;
+  document.getElementById('s-ok').disabled=true;
+  document.getElementById('s-no').disabled=true;
+}
+
+/* ══ QUEUE + LEGACY stubs (kept for switchMode) ════════════ */
+function queueTeacherRound() {
+  const q = buildQueueFromConfigs('teacher');
+  if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
+}
+function queueStudentRound() {
+  const q = buildQueueFromConfigs('student');
+  if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
+}
+
+function clearArchive(){
+  const strip=document.getElementById('archive-strip');
+  strip.innerHTML='<span class="archive-strip-label">📌 History</span><span style="font-size:12px;color:var(--muted);font-style:italic" id="archive-empty">Wheels you\'ve spun will appear here</span>';
+}
+
+function collapseAllWheels(m) {
+  // Auto-collapse all wheel config cards so right panel scrolls up to show controls
+  const configs = getConfigs(m);
+  configs.forEach(cfg => cfg.isOpen = false);
+  renderWheelConfigs(m);
+  // Scroll right panel back to top so Correct/Wrong buttons are visible
+  const rp = document.getElementById('right-panel');
+  if (rp) rp.scrollTop = 0;
+}
+
+/* ══ SCOREBOARDS ════════════════════════════════════════════════ */
+function updateTSB(){
+  // Only show names registered as scoreboard players — no topics, no punishments
+  const entries = Object.entries(scores)
+    .filter(([n]) => scoreboardNames.size === 0 || scoreboardNames.has(n))
+    .sort((a,b) => b[1]-a[1]);
+  if (entries.length === 0) {
+    document.getElementById('t-sb').innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Save settings to begin</div>';
+    return;
+  }
+  const max = Math.max(...entries.map(e=>e[1]), 10);
+  document.getElementById('t-sb').innerHTML = entries
+    .map(([n,p],i)=>`<div class="score-row">
+      <span class="score-name">${i===0&&p>0?'🥇 ':''}${n}</span>
+      <div class="score-bar-bg"><div class="score-bar" style="width:${Math.round(p/max*100)}%;background:${SBC[i%SBC.length]}"></div></div>
+      <span class="score-pts">${p}pts</span></div>`).join('');
+}
+function updateSSB(){
+  // Only show names registered as scoreboard players — no punishment items
+  const entries = Object.entries(scores)
+    .filter(([n]) => scoreboardNames.size === 0 || scoreboardNames.has(n))
+    .sort((a,b) => b[1]-a[1]);
+  if (entries.length === 0) {
+    document.getElementById('s-sb').innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Save settings to begin</div>';
+    return;
+  }
+  const max = Math.max(...entries.map(e=>e[1]), 10);
+  document.getElementById('s-sb').innerHTML = entries
+    .map(([n,p],i)=>`<div class="score-row">
+      <span class="score-name">${i===0&&p>0?'🥇 ':''}${n}${punishCt[n]?` <span style="font-size:10px;color:var(--muted)">(${punishCt[n]}x😂)</span>`:''}</span>
+      <div class="score-bar-bg"><div class="score-bar" style="width:${Math.round(p/max*100)}%;background:${SBC[i%SBC.length]}"></div></div>
+      <span class="score-pts">${p}pts</span></div>`).join('');
+}
+
+/* ══ MODE SWITCH ════════════════════════════════════════════════ */
+function switchMode(m){
+  mode=m;
+  document.getElementById('ctrl-teacher').style.display=m==='teacher'?'':'none';
+  document.getElementById('ctrl-student').style.display=m==='student'?'':'none';
+  document.getElementById('btn-t').className=m==='teacher'?'active-t':'';
+  document.getElementById('btn-s').className=m==='student'?'active-s':'';
+  // Reset and load first wheel for new mode
+  archivedWheels=[];wheelQueue=[];activeWheel=null;
+  clearArchive();
+  document.getElementById('main-spin-btn').disabled=false;
+  document.getElementById('main-spin-btn').textContent='⟳ Spin';
+  document.getElementById('main-result').textContent='Spin to begin';
+  if(m==='teacher')queueTeacherRound();
+  else queueStudentRound();
+}
+
+/* ══ OVERLAY ════════════════════════════════════════════════════ */
+function showOv(em,ti,su,type='info'){
+  const card=document.getElementById('ov-card'),btn=document.getElementById('ov-btn');
+  if(type==='win'){card.style.background='linear-gradient(135deg,#E8F5E9,#fff)';card.style.borderTopColor='#2E7D32';btn.style.background='linear-gradient(135deg,#2E7D32,#1B5E20)';}
+  else if(type==='lose'){card.style.background='linear-gradient(135deg,#FFF3E0,#fff)';card.style.borderTopColor='#E65100';btn.style.background='linear-gradient(135deg,#E65100,#BF360C)';}
+  else if(type==='punish'){card.style.background='linear-gradient(135deg,#FCE4EC,#fff)';card.style.borderTopColor='#C62828';btn.style.background='linear-gradient(135deg,#C62828,#B71C1C)';}
+  else{card.style.background='';card.style.borderTopColor='#1565C0';btn.style.background='linear-gradient(135deg,#1565C0,#0D47A1)';}
+  document.getElementById('ov-e').textContent=em;
+  document.getElementById('ov-t').textContent=ti;
+  document.getElementById('ov-s').innerHTML=(su||'').replace(/\n/g,'<br>');
+  document.getElementById('ov').classList.add('show');
+}
+function closeOv(){document.getElementById('ov').classList.remove('show');}
+
+/* ══ REPORT MODAL ═══════════════════════════════════════════════ */
+function showReport(m){
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const win=sorted[0];const acc=rounds?Math.round(correct/rounds*100):0;
+  let html=`<div class="rep-section"><h4>📈 Summary</h4>
+    <div class="rep-row"><span>Date</span><span>${sessionDate}</span></div>
+    <div class="rep-row"><span>Rounds</span><span>${rounds}</span></div>
+    <div class="rep-row"><span>Correct</span><span style="color:#2E7D32">${correct}</span></div>
+    <div class="rep-row"><span>Wrong</span><span style="color:#C62828">${wrongs}</span></div>
+    <div class="rep-row"><span>Accuracy</span><span>${acc}%</span></div>
+    ${win?`<div class="rep-row"><span>Winner</span><span>🏆 ${win[0]} — ${win[1]}pts</span></div>`:''}
+  </div>`;
+  html+=`<div class="rep-section"><h4>🏆 Scores</h4>`;
+  sorted.forEach(([n,p],i)=>{
+    html+=`<div class="rep-row"><span>${['🥇','🥈','🥉'][i]||'  '} ${n}</span><span>${p}pts${m==='student'&&punishCt[n]?' · '+punishCt[n]+'x😂':''}</span></div>`;
+  });
+  html+=`</div>`;
+  if(m==='teacher'&&Object.keys(topicS).length){
+    html+=`<div class="rep-section"><h4>📊 Topic performance</h4>`;
+    Object.entries(topicS).forEach(([t,s])=>{
+      const tot=s.c+s.w,pct=tot?Math.round(s.c/tot*100):0;
+      const col=pct>=70?'#2E7D32':pct>=40?'#E65100':'#C62828';
+      html+=`<div class="rep-row"><span>${t}</span><span style="color:${col}">${pct}% (${tot}q)</span></div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`<div class="rep-section"><h4>📥 Download</h4><div class="dl-row">
+    <button class="dl-btn" onclick="downloadPDF('${m}')">📄 PDF Report</button>
+    <button class="dl-btn" onclick="downloadCSV('${m}')">📊 CSV</button>
+    <button class="dl-btn" onclick="downloadLog('${m}')">📋 Log</button>
+  </div></div>`;
+  document.getElementById('modal-title').textContent=m==='teacher'?'📊 Classroom Report':'📊 Study Session Report';
+  document.getElementById('modal-body').innerHTML=html;
+  document.getElementById('report-modal').classList.add('show');
+}
+function closeReport(){document.getElementById('report-modal').classList.remove('show');}
+
+/* ══ DOWNLOADS ══════════════════════════════════════════════════ */
+function downloadPDF(m){
+  const title=m==='teacher'?(document.getElementById('t-cn')?.value||'SpinPick'):'SpinPick Study';
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const acc=rounds?Math.round(correct/rounds*100):0;
+  let html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:28px;color:#1A1D2E;max-width:680px}h1{font-size:20px;color:#1565C0;border-bottom:3px solid #1565C0;padding-bottom:6px}h2{font-size:14px;margin:18px 0 6px;color:#374151}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#1565C0;color:#fff;padding:7px 8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #E4E7EF}tr:nth-child(even)td{background:#F7F8FC}.footer{margin-top:24px;font-size:10px;color:#9CA3AF;border-top:1px solid #E4E7EF;padding-top:8px}</style></head><body>
+  <h1>📊 ${title}</h1><p style="font-size:12px;color:#6B7280">Generated: ${new Date().toLocaleString()}</p>
+  <h2>Summary</h2><table><tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Rounds</td><td>${rounds}</td></tr><tr><td>Correct</td><td>${correct}</td></tr>
+  <tr><td>Wrong</td><td>${wrongs}</td></tr><tr><td>Accuracy</td><td>${acc}%</td></tr>
+  ${sorted[0]?`<tr><td>Winner</td><td>🏆 ${sorted[0][0]} — ${sorted[0][1]}pts</td></tr>`:''}</table>
+  <h2>Scoreboard</h2><table><tr><th>Rank</th><th>Name</th><th>Points</th>${m==='student'?'<th>Punishments</th>':''}</tr>`;
+  sorted.forEach(([n,p],i)=>html+=`<tr><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${n}</td><td>${p}</td>${m==='student'?`<td>${punishCt[n]||0}</td>`:''}</tr>`);
+  html+=`</table>`;
+  if(m==='teacher'&&Object.keys(topicS).length){
+    html+=`<h2>Topic Performance</h2><table><tr><th>Topic</th><th>Correct</th><th>Wrong</th><th>Accuracy</th></tr>`;
+    Object.entries(topicS).forEach(([t,s])=>{const tot=s.c+s.w,pct=tot?Math.round(s.c/tot*100):0;html+=`<tr><td>${t}</td><td>${s.c}</td><td>${s.w}</td><td>${pct}%</td></tr>`;});
+    html+=`</table>`;
+  }
+  if(sessionLog.length){
+    html+=`<h2>Round Log</h2><table><tr><th>Time</th><th>Round</th><th>Topic/Asker</th><th>Group/Answerer</th><th>Result</th><th>Pts</th></tr>`;
+    sessionLog.forEach(r=>html+=`<tr><td>${r.time}</td><td>${r.round}</td><td>${r.asker}</td><td>${r.answerer}</td><td>${r.result}</td><td>${r.points}</td></tr>`);
+    html+=`</table>`;
+  }
+  html+=`<div class="footer">Generated by SpinPick</div></body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);}
+}
+
+function downloadCSV(m){
+  const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'SpinPick'):'SpinPick_Study').replace(/[^a-z0-9]/gi,'_');
+  let csv=`SPINPICK REPORT\r\nDate,${sessionDate}\r\nRounds,${rounds}\r\nCorrect,${correct}\r\nWrong,${wrongs}\r\nAccuracy,${rounds?Math.round(correct/rounds*100):0}%\r\n\r\nSCOREBOARD\r\nRank,Name,Points${m==='student'?',Punishments':''}\r\n`;
+  Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>csv+=`${i+1},${n},${p}${m==='student'?','+(punishCt[n]||0):''}\r\n`);
+  if(m==='teacher'&&Object.keys(topicS).length){
+    csv+=`\r\nTOPIC PERFORMANCE\r\nTopic,Correct,Wrong,Accuracy\r\n`;
+    Object.entries(topicS).forEach(([t,s])=>{const tot=s.c+s.w;csv+=`${t},${s.c},${s.w},${tot?Math.round(s.c/tot*100):0}%\r\n`;});
+  }
+  if(sessionLog.length){csv+=`\r\nROUND LOG\r\nTime,Round,Asker,Answerer,Result,Points\r\n`;sessionLog.forEach(r=>csv+=`${r.time},${r.round},${r.asker},${r.answerer},${r.result},${r.points}\r\n`);}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`${title}_${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+
+function downloadLog(m){
+  const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'SpinPick'):'SpinPick_Study').replace(/[^a-z0-9]/gi,'_');
+  let log=`=== SPINPICK SESSION LOG ===\nDate: ${sessionDate}\nMode: ${m}\nRounds: ${rounds} | Correct: ${correct} | Wrong: ${wrongs}\nAccuracy: ${rounds?Math.round(correct/rounds*100):0}%\n\n--- SCORES ---\n`;
+  Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>log+=`  ${i+1}. ${n.padEnd(16)} ${p}pts${m==='student'&&punishCt[n]?' ('+punishCt[n]+' punishments)':''}\n`);
+  if(sessionLog.length){log+=`\n--- ROUND LOG ---\n`;sessionLog.forEach(r=>log+=`[${r.time}] R${r.round}: ${r.asker} → ${r.answerer} | ${r.result} | ${r.points>0?'+':''}${r.points}pts\n`);}
+  log+=`\n=== END ===\nGenerated by SpinPick\n`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([log],{type:'text/plain'}));
+  a.download=`${title}_${new Date().toISOString().slice(0,10)}.log`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+
+/* ══ NARRATION ══════════════════════════════════════════════════ */
+/* ── 3-STATE VOICE SYSTEM ──────────────────────────────────────
+   voiceGender cycles: 'off' → 'female' → 'male' → 'off'
+   speakAlways(text) respects voiceGender to pick correct voice.
+   Per-wheel voiceOn flag gates whether speakAlways is called at all.
+──────────────────────────────────────────────────────────────── */
+function toggleNarration() {
+  // Cycle: off → female → male → off
+  if (voiceGender === 'off')    voiceGender = 'female';
+  else if (voiceGender === 'female') voiceGender = 'male';
+  else                          voiceGender = 'off';
+  narrationOn = voiceGender !== 'off';
+
+  const btn = document.getElementById('narr-btn');
+  const states = {
+    female: { label: '👩 Female Voice', cls: 'narr-btn on female' },
+    male:   { label: '👨 Male Voice',   cls: 'narr-btn on male'   },
+    off:    { label: '🔇 Voice Off',    cls: 'narr-btn'            },
+  };
+  btn.textContent = states[voiceGender].label;
+  btn.className   = states[voiceGender].cls;
+
+  if (voiceGender !== 'off') {
+    speakAlways(voiceGender === 'female' ? 'Female voice is on' : 'Male voice is on');
+  }
+}
+
+function speakAlways(text) {
+  if (!text || !window.speechSynthesis || voiceGender === 'off') return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.volume = 1;
+
+  const voices = window.speechSynthesis.getVoices()
+    .filter(v => v.lang.startsWith('en'));
+
+  if (voiceGender === 'female') {
+    // Prefer known female voices
+    u.rate  = 0.92; u.pitch = 1.15;
+    const femaleNames = ['Samantha','Karen','Moira','Tessa','Victoria','Google UK English Female',
+                         'Microsoft Zira','Siri Female','Female'];
+    const pick = voices.find(v => femaleNames.some(n => v.name.includes(n)))
+              || voices.find(v => v.name.toLowerCase().includes('female'))
+              || voices.find(v => v.gender === 'female')
+              || voices[0];
+    if (pick) u.voice = pick;
+  } else {
+    // Male voice
+    u.rate  = 0.88; u.pitch = 0.82;
+    const maleNames = ['Daniel','Alex','Fred','Google UK English Male','Microsoft David',
+                       'Microsoft Mark','Siri Male','Male','Arthur','Oliver'];
+    const pick = voices.find(v => maleNames.some(n => v.name.includes(n)))
+              || voices.find(v => v.name.toLowerCase().includes('male'))
+              || voices.find(v => v.gender === 'male')
+              || voices[Math.min(1, voices.length-1)];
+    if (pick) u.voice = pick;
+  }
+  window.speechSynthesis.speak(u);
+}
+
+function speak(text) {
+  if (!narrationOn) return;
+  speakAlways(text);
+}
+
+/* ══ CONFETTI ════════════════════════════════════════════════════ */
+function launchConfetti(){
+  const el=document.getElementById('cf');el.innerHTML='';
+  const cc=['#E53935','#F4B400','#0F9D58','#1967D2','#8E24AA','#F4511E','#00ACC1','#FB8C00'];
+  for(let i=0;i<65;i++){const p=document.createElement('div');p.className='cp';const sz=7+Math.random()*9;p.style.cssText=`left:${Math.random()*100}%;top:-10px;background:${cc[~~(Math.random()*cc.length)]};border-radius:${Math.random()>.5?'50%':'2px'};width:${sz}px;height:${sz}px;animation-delay:${Math.random()*.6}s;animation-duration:${1.2+Math.random()*1}s`;el.appendChild(p);}
+  setTimeout(()=>el.innerHTML='',2800);
+}
+
+/* ══ SOUND SELECTOR ═════════════════════════════════════════════ */
+function setSound(v){ currentSound=v; } // legacy stub
+
+/* ══ RESIZE ══════════════════════════════════════════════════════ */
+window.addEventListener('resize',()=>{
+  const c=document.getElementById('active-canvas');
+  if(!c||!activeWheel)return;
+  const sz=c.parentElement.clientWidth||340;c.width=sz;c.height=sz;
+  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+});
+
+/* ══ INIT ════════════════════════════════════════════════════════ */
+function buildWheel(key,title,items,colors,startAngle=0){
+  return{key,title,items:Array.isArray(items)?items:items.split('\n').map(s=>s.trim()).filter(Boolean),colors,angle:startAngle,spinning:false,greyIdx:-1,isLastWheel:false,configRef:null};
+}
+
+initWheelConfigs();
+switchMode('teacher');
+// Load voices async
+if(window.speechSynthesis)window.speechSynthesis.onvoiceschanged=()=>{};
+</script>
+<!-- FAQ SECTION — SEO content at bottom of page -->
+<div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem">
+  <div style="max-width:800px;margin:0 auto">
+    <h2 style="font-family:var(--font);font-size:22px;font-weight:900;margin-bottom:6px;color:var(--text)">Frequently asked questions</h2>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem">Everything you need to know about SpinPick — the free classroom spin wheel with scoring, reports and voice narration.</p>
+
+    <div style="display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap">
+      <button id="faq-t-btn" onclick="showFaq('t')"
+        style="padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--blue);background:var(--blue);color:#fff;font-family:var(--fontb)">
+        👨‍🏫 Teacher FAQ
+      </button>
+      <button id="faq-s-btn" onclick="showFaq('s')"
+        style="padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:var(--fontb)">
+        👨‍🎓 Student FAQ
+      </button>
+    </div>
+
+    <div id="faq-list" style="background:var(--bg);border-radius:14px;border:1px solid var(--border);overflow:hidden"></div>
+  </div>
+</div>
+
+<script>
+/* ── FAQ ──────────────────────────────────────────────────────── */
+const TFAQ=[
+  ['Do I need an account to use SpinPick?','No account needed — SpinPick is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning. Creating an account (coming soon) will let you save your class lists and session history permanently across devices.'],
+  ['Can I import my class list from Google Classroom?','Google Classroom import is on our roadmap. In the meantime, paste your student names directly into the Wheel 1 items box — one name per line. Most teachers find copy-pasting from their register takes under 30 seconds.'],
+  ['What if a student is absent?','Simply delete their name from the wheel items box before starting the game. Your changes take effect the next time you click Start. You can also uncheck a wheel entirely if you want to skip it for the day.'],
+  ['Can two groups steal an unanswered question?','Yes — this is a great house rule! If a group answers incorrectly, spin Wheel 2 again to pick a new group. Any group that answers the stolen question correctly gets points. This keeps every round exciting.'],
+  ['Does SpinPick work on a classroom smartboard or projector?','Yes — SpinPick is fully responsive and designed to work on any screen size including interactive smartboards, projectors, tablets and phones. The single-page layout means the wheel is always front and centre without any navigation.'],
+  ['What does the topic performance heatmap in the report show?','After a session the report shows each topic\'s accuracy percentage — how often the selected group answered correctly. Topics with low accuracy (shown in red) highlight areas where students need more teaching time.'],
+  ['Can I download the session results?','Yes — after each session click "View & download report" to export a PDF report (printable), a CSV spreadsheet (opens in Excel or Google Sheets) or a plain text session log file.'],
+  ['How do I rename or customise the wheels?','Click the wheel title in the setup panel to rename it — the change reflects live on the wheel stage and spin button. Each wheel also has its own colour palette and spin sound so every wheel feels unique.'],
+  ['Can I use SpinPick with just one wheel?','Absolutely — uncheck any wheels you don\'t need and only the enabled wheels will spin. You can run a session with a single wheel, two wheels, or up to as many as you add.'],
+  ['Is SpinPick free? Are there ads?','SpinPick is free to use. Like most free web tools it may display non-intrusive ads to cover hosting costs. There are no paywalls, no premium tiers and no credit card required.'],
+];
+const SFAQ=[
+  ['Do we need to create an account to play?','No — just type your player names into the setup and hit Start. Zero signup, zero hassle. Your session runs entirely in the browser.'],
+  ['Can we add our own custom punishments?','Yes! The Punishment wheel is fully editable. Open Wheel 3 in the setup panel and type any punishments you like — push ups, truth, dare, silly dances — one per line. The wheel updates instantly.'],
+  ['Can we play online with friends in different locations?','Real-time multiplayer is on our roadmap. For now SpinPick works great in person or over a video call — share your screen and everyone watches the wheel spin together.'],
+  ['Why does Wheel 2 grey out one name after Wheel 1 spins?','To prevent the same person being both the asker and the answerer! When Wheel 1 picks "Sarah", Sarah\'s segment on Wheel 2 turns grey and the wheel automatically skips her if it lands there, ensuring a fair and different person answers.'],
+  ['How does scoring work in Student mode?','Answerer correct = +10 points. Answerer wrong = spin the punishment wheel, and the asker gets +5 consolation points for asking a question that stumped someone. This ensures every round has a points event and keeps the leaderboard moving.'],
+  ['How many players can join a study session?','2 to 20 players across both wheels. For best results use 3–8 players — sessions stay fast-paced and every player gets picked regularly.'],
+  ['Can we save our study group setup for next week?','Session saving (persistent groups) is coming soon. For now you can bookmark the page and re-enter your names — it only takes a few seconds since the default names are already there as a starting point.'],
+  ['How do we share our session results on TikTok or Instagram?','After the session tap "View session results" then "Download PDF". Screenshot the PDF or record your screen during the session — the confetti moments and punishment reveals make great short-form content!'],
+];
+
+function showFaq(type){
+  const tb=document.getElementById('faq-t-btn'),sb=document.getElementById('faq-s-btn');
+  if(tb)tb.style.cssText=`padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fontb);border:1px solid ${type==='t'?'var(--blue)':'var(--border)'};background:${type==='t'?'var(--blue)':'var(--card)'};color:${type==='t'?'#fff':'var(--muted)'}`;
+  if(sb)sb.style.cssText=`padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fontb);border:1px solid ${type==='s'?'var(--green)':'var(--border)'};background:${type==='s'?'var(--green)':'var(--card)'};color:${type==='s'?'#fff':'var(--muted)'}`;
+  const faqs=type==='t'?TFAQ:SFAQ;
+  const el=document.getElementById('faq-list');
+  if(!el)return;
+  el.innerHTML=faqs.map((f,i)=>`
+    <div style="border-bottom:1px solid var(--border)">
+      <div id="fqh${type}${i}" onclick="tFaq('${type}',${i})"
+        style="font-size:14px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--text);padding:13px 16px;transition:background 0.1s;user-select:none"
+        onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+        <span>${f[0]}</span>
+        <span id="fqa${type}${i}-arr" style="color:var(--muted);flex-shrink:0;transition:transform 0.2s;display:inline-block">▾</span>
+      </div>
+      <div id="fqa${type}${i}" style="display:none;font-size:13px;color:var(--muted);line-height:1.7;padding:0 16px 14px">${f[1]}</div>
+    </div>`).join('');
+}
+
+function tFaq(type,i){
+  const el=document.getElementById(`fqa${type}${i}`);
+  const arr=document.getElementById(`fqa${type}${i}-arr`);
+  const open=el.style.display!=='none'&&el.style.display!=='';
+  el.style.display=open?'none':'block';
+  if(arr)arr.style.transform=open?'':'rotate(180deg)';
+}
+
+// Init FAQ on load
+showFaq('t');
+</script>
+
+</body>
+</html>
