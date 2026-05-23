@@ -35,9 +35,11 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 .mode-toggle button.active-t{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(21,101,192,0.3)}
 .mode-toggle button.active-s{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(46,125,50,0.3)}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.mute-btn{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:13px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.18s;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.mute-btn.unmuted{background:#E8F5E9;border-color:#2E7D32;color:#2E7D32}
+.mute-btn.muted{background:#FAFAFA;border-color:#9E9E9E;color:#757575}
+/* keep narr-btn styles for per-wheel voice buttons */
 .narr-btn{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.15s;white-space:nowrap}
-.narr-btn.on.female{background:#FCE4EC;border-color:#E91E63;color:#C2185B}
-.narr-btn.on.male{background:#E3F2FD;border-color:#1565C0;color:#0D47A1}
 
 /* ── MAIN LAYOUT ── */
 .main{display:grid;grid-template-columns:1fr 300px;gap:0;min-height:calc(100vh - 54px)}
@@ -54,7 +56,15 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
   flex:1;display:flex;flex-direction:column;align-items:center;
   justify-content:center;padding:1.5rem 1.5rem 0.5rem;
   position:relative;
+  transition:background 0.4s;
 }
+.wheel-stage.neon-bg{
+  background:var(--card);
+}
+.wheel-stage.neon-bg .wheel-title-edit{color:var(--muted);border-bottom-color:var(--border);}
+.wheel-stage.neon-bg .wheel-title-edit:focus{color:var(--text);border-bottom-color:var(--blue);}
+.wheel-stage.neon-bg .result-pill{background:var(--bg);color:var(--text);border-color:var(--border);}
+.wheel-stage.neon-bg .spin-btn.t,.wheel-stage.neon-bg .spin-btn.s,.wheel-stage.neon-bg .spin-btn.p{box-shadow:0 4px 14px rgba(0,0,0,0.12);}
 .stage-label{
   font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
   color:var(--muted);margin-bottom:8px;text-align:center;
@@ -181,7 +191,7 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 .wheel-config-body{padding:8px 10px 10px;display:none}
 .wheel-config.open .wheel-config-body{display:block}
 .wheel-color-pick{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}
-.color-dot{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.12s,transform 0.12s}
+.color-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.12s,transform 0.12s;flex-shrink:0}
 .color-dot:hover,.color-dot.sel{border-color:var(--text);transform:scale(1.2)}
 .wheel-config-footer{display:flex;align-items:center;gap:6px;padding:6px 10px 8px;font-size:10px;color:var(--muted)}
 .add-wheel-btn{display:flex;align-items:center;gap:6px;width:100%;padding:8px 10px;border-radius:9px;border:1.5px dashed var(--border);background:transparent;font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--muted);transition:all 0.15s;margin-bottom:10px}
@@ -238,6 +248,10 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 .faq-a{font-size:12px;color:var(--muted);line-height:1.65;display:none;padding:0 14px 12px}
 .faq-a.open{display:block}
 
+/* ── ELIMINATE SPIN BEFORE toggle row ── */
+.esb-toggle-row{transition:border-color 0.15s,background 0.15s}
+.esb-toggle-row:hover{filter:brightness(0.97)}
+
 @media(max-width:680px){
   .main{grid-template-columns:1fr}
   .right-panel{max-height:none}
@@ -248,7 +262,6 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 <body>
 <div id="cf"></div>
 
-<!-- TOPBAR -->
 <div class="topbar">
   <span class="logo">Spin<span>Pick</span></span>
   <div class="mode-toggle">
@@ -256,14 +269,12 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
     <button id="btn-s" onclick="switchMode('student')">👨‍🎓 Student</button>
   </div>
   <div class="topbar-right">
-    <button class="narr-btn" id="narr-btn" onclick="toggleNarration()" title="Cycle: Female → Male → Off">🔇 Voice Off</button>
+    <button class="mute-btn unmuted" id="mute-btn" onclick="toggleMute()" title="Toggle all sound &amp; voice">🔊 Sound ON</button>
   </div>
 </div>
 
-<!-- MAIN LAYOUT -->
 <div class="main" id="main-layout">
 
-  <!-- LEFT: WHEEL STAGE -->
   <div class="left-panel">
     <div class="wheel-stage" id="wheel-stage">
       <input class="wheel-title-edit" id="active-wheel-title" value="📚 Wheel 1 — Topic">
@@ -274,16 +285,13 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
       <div class="result-pill" id="main-result">Spin to begin</div>
     </div>
 
-    <!-- ARCHIVE STRIP -->
     <div class="archive-strip" id="archive-strip">
       <span class="archive-strip-label">📌 History</span>
       <span style="font-size:12px;color:var(--muted);font-style:italic" id="archive-empty">Wheels you've spun will appear here</span>
     </div>
   </div>
 
-  <!-- RIGHT: CONTROLS -->
   <div class="right-panel" id="right-panel">
-    <!-- Teacher controls -->
     <div id="ctrl-teacher">
       <div class="stat-row">
         <div class="stat-box"><div class="stat-val" id="t-r">0</div><div class="stat-lbl">Rounds</div></div>
@@ -305,14 +313,30 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
           <label>Class name</label>
           <input id="t-cn" type="text" value="Math Grade 5 — Class 3A">
         </div>
-        <!-- Dynamic wheel configs for teacher -->
+        <div class="setup-panel" style="background:var(--bg);border:1px solid var(--border);margin-bottom:12px">
+          <h4 style="margin:0 0 10px 0">🎯 Score Setting</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="setup-group" style="margin-bottom:0">
+              <label>Correct answer points</label>
+              <input id="t-score-correct" type="number" value="10" min="1" max="100"
+                oninput="updateScoreSettings()">
+            </div>
+            <div class="setup-group" style="margin-bottom:0">
+              <label>Wrong answer points</label>
+              <input id="t-score-wrong" type="number" value="0" min="0" max="100"
+                oninput="updateScoreSettings()">
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:6px">
+            Preview: <span style="font-weight:700">✓ +<span id="t-preview-correct">10</span></span> pts | <span style="font-weight:700">✗ <span id="t-preview-wrong">0</span></span> pts
+          </div>
+        </div>
         <div id="t-wheel-configs"></div>
         <button class="add-wheel-btn" onclick="addWheelConfig('teacher')">＋ Add another wheel</button>
         <button class="start-btn t" onclick="startTeacher()">💾 Save settings &amp; start</button>
       </div>
     </div>
 
-    <!-- Student controls -->
     <div id="ctrl-student" style="display:none">
       <div class="stat-row">
         <div class="stat-box"><div class="stat-val" id="s-r">0</div><div class="stat-lbl">Rounds</div></div>
@@ -330,7 +354,6 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
       <button class="link-btn" onclick="showReport('student')">📊 View session results</button>
       <div class="setup-panel">
         <h4>⚙️ Game setup</h4>
-        <!-- Dynamic wheel configs for student -->
         <div id="s-wheel-configs"></div>
         <button class="add-wheel-btn" onclick="addWheelConfig('student')">＋ Add another wheel</button>
         <button class="start-btn s" onclick="startStudent()">💾 Save settings &amp; start</button>
@@ -339,7 +362,6 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
   </div>
 </div>
 
-<!-- REPORT MODAL -->
 <div class="modal-overlay" id="report-modal">
   <div class="modal-card">
     <div class="modal-header">
@@ -350,7 +372,6 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
   </div>
 </div>
 
-<!-- WIN OVERLAY -->
 <div class="ov" id="ov">
   <div class="ov-card" id="ov-card">
     <div class="ov-emoji" id="ov-e"></div>
@@ -382,9 +403,13 @@ let scores={},punishCt={},topicS={},scoreboardNames=new Set();
 let rounds=0,correct=0,wrongs=0,punishments=0;
 let curTopic=null,curGroup=null,curAsker=null,curAnswerer=null;
 let sessionLog=[];
-let narrationOn=false; // legacy
-let voiceGender='off'; // 'female' | 'male' | 'off'
+let narrationOn=true; // legacy — mirrors voiceGender!=='off'
+let voiceGender='female'; // 'female' | 'male' | 'off' — starts ON (female)
 let currentSound='kalimba';
+let scoreCorrect=10, scoreWrong=0; // Customizable teacher scores
+const wheelLastAngles={}; // cfg.id → last stopped angle (all wheels)
+let pendingAdvanceWheel=false; // wait for Continue before swapping to next wheel on stage
+let teacherQuizEnded=false;
 const sessionDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 
 /* ══ AUDIO ENGINE ══════════════════════════════════════════════ */
@@ -422,15 +447,16 @@ function kalimba(freq,vol=0.22,when=0,tail=0.9){
 const PENTA=[262,294,330,392,440,523,587,659,784,880];
 const CHIME_F=[1047,1175,1319,1568,1760,2093];
 
-function playWinSound(){[262,330,392,523].forEach((f,i)=>kalimba(f,0.28,i*0.11,1.1));kalimba(784,0.14,0.52,1.2);kalimba(1047,0.09,0.64,1.0);}
-function playLoseSound(){[523,440,349,294].forEach((f,i)=>kalimba(f,0.16,i*0.13,0.9));}
-function playPunishSound(){[330,392,523,659,784].forEach((f,i)=>kalimba(f,0.18,i*0.07,0.5));}
+function playWinSound(){if(globalMuted)return;[262,330,392,523].forEach((f,i)=>kalimba(f,0.28,i*0.11,1.1));kalimba(784,0.14,0.52,1.2);kalimba(1047,0.09,0.64,1.0);}
+function playLoseSound(){if(globalMuted)return;[523,440,349,294].forEach((f,i)=>kalimba(f,0.16,i*0.13,0.9));}
+function playPunishSound(){if(globalMuted)return;[330,392,523,659,784].forEach((f,i)=>kalimba(f,0.18,i*0.07,0.5));}
 
 let tickTimer=null,spinGain=null,spinFadeRaf=null;
 let kNoteIdx=0;
 
 function startSpinSound(duration){
   stopSpinSound();
+  if(globalMuted) return; // master mute
   try{
     const c=getCtx();c.resume();
     spinGain=c.createGain();spinGain.gain.setValueAtTime(1,c.currentTime);spinGain.connect(out());
@@ -520,42 +546,231 @@ function drumThru(vol,dest){
 }
 
 /* ══ WHEEL DRAWING ══════════════════════════════════════════════ */
-function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1){
+function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[]){
   if(!canvas)return;
   const sz=canvas.width,ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,sz,sz);
-  const cx=sz/2,cy=sz/2,r=sz/2-3,n=items.length,slice=2*Math.PI/n;
+  const cx=sz/2,cy=sz/2,r=sz/2-4,n=items.length,slice=2*Math.PI/n;
+  // Support both single greyIdx and array of greyIndices
+  const greySet=new Set(greyIndices.length>0?greyIndices:(greyIdx>=0?[greyIdx]:[]));
+  const isGrey=i=>greySet.has(i);
+
+  // Detect palette type from colors array reference
+  const palIdx=COLOR_PALETTES?COLOR_PALETTES.findIndex(p=>p===colors):-1;
+  const palType=PALETTE_TYPES?PALETTE_TYPES[palIdx]||'solid':'solid';
+  const isNeon=palType==='neon'||palType==='flat-neon';
+  const isMetal=palType==='metallic';
+  const isMono=palType==='mono';
+  const isDark=palType==='dark';
+  const isPastel=palType==='pastel';
+
+  // Outer glow ring for neon
+  if(isNeon){
+    ctx.save();
+    ctx.shadowBlur=sz*0.04;
+    ctx.shadowColor='rgba(0,0,0,0.12)';
+    ctx.beginPath();ctx.arc(cx,cy,r+2,0,2*Math.PI);
+    ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=3;ctx.stroke();
+    ctx.restore();
+  }
+// Draw segments
   for(let i=0;i<n;i++){
     const a0=angle+i*slice,a1=a0+slice;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a0,a1);ctx.closePath();
-    ctx.fillStyle=i===greyIdx?'#BBBBBB':colors[i%colors.length];ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.75)';ctx.lineWidth=2.5;ctx.stroke();
+    
+    let len = colors.length;
+    let colorIndex;
+    let prevIndex;
+
+    // 1. Professional Gradient Mapping (Ping-Pong loop)
+    // This allows dark-to-light palettes to smoothly wave back and forth
+    if (len > 2) {
+        let cycle = len * 2 - 2;
+        let pos = i % cycle;
+        colorIndex = pos < len ? pos : cycle - pos;
+        
+        // Calculate the previous segment's color for safety checks
+        let prevPos = (i - 1) % cycle;
+        prevIndex = prevPos < len ? prevPos : cycle - prevPos;
+    } else {
+        // Standard alternating loop for simple 2-color palettes
+        colorIndex = i % len;
+        prevIndex = (i - 1) % len;
+    }
+
+    // 2. Patch the last segment if it accidentally clashes with the first
+    if (i === n - 1 && colorIndex === 0 && n > 1) {
+        colorIndex = 1; 
+        
+        // Safety: ensure our shifted color doesn't clash with the 2nd-to-last segment
+        if (colorIndex === prevIndex) {
+            colorIndex = 2; 
+        }
+    }
+
+    // 3. Define the actual color
+    const baseColor = isGrey(i) ? '#BBBBBB' : colors[colorIndex];
+    
+    // 4. Draw the shape
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,a0,a1);
+    ctx.closePath();
+    // ... (Continue with your existing if(isNeon) or if(isMetal) logic below this)
+
+    if(isNeon && !isGrey(i)){
+      ctx.fillStyle=baseColor;
+      ctx.shadowColor=baseColor;
+      ctx.shadowBlur=sz*0.035;
+    } else if(isMetal && !isGrey(i)){
+      // Metallic: linear gradient light→dark→light
+      const a0r=a0+slice/2;
+      const grad=ctx.createLinearGradient(
+        cx+r*Math.cos(a0r-slice*0.4),cy+r*Math.sin(a0r-slice*0.4),
+        cx+r*Math.cos(a0r+slice*0.4),cy+r*Math.sin(a0r+slice*0.4)
+      );
+      grad.addColorStop(0,lighten(baseColor,0.45));
+      grad.addColorStop(0.35,baseColor);
+      grad.addColorStop(0.65,darken(baseColor,0.25));
+      grad.addColorStop(1,lighten(baseColor,0.3));
+      ctx.fillStyle=grad;
+    } else {
+      ctx.fillStyle=baseColor;
+    }
+
+    ctx.fill();
+
+    // Segment borders
+    if(isNeon){
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=Math.max(2,Math.floor(sz*0.012));
+      ctx.shadowColor='rgba(255,255,255,0.95)';ctx.shadowBlur=sz*0.02;
+    } else if(isMetal){
+      ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=2;
+    } else if(isMono||isDark){
+      ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1.5;
+    } else {
+      ctx.strokeStyle='rgba(255,255,255,0.75)';ctx.lineWidth=2.5;
+    }
+    ctx.stroke();
+    ctx.restore();
   }
+
+  // Text labels
   for(let i=0;i<n;i++){
     const mid=angle+i*slice+slice/2;
     ctx.save();ctx.translate(cx,cy);ctx.rotate(mid);
     const fs=Math.max(10,Math.min(17,Math.floor(sz*0.054)));
     ctx.font=`800 ${fs}px 'Nunito',Arial,sans-serif`;
-    ctx.fillStyle=i===greyIdx?'rgba(255,255,255,0.4)':'#fff';
-    ctx.textAlign='right';ctx.shadowColor='rgba(0,0,0,0.55)';ctx.shadowBlur=4;
+
+    // Text color by palette type
+    let tc='#fff';
+    if(isGrey(i)) tc='rgba(255,255,255,0.4)';
+    else if(isMono) tc='#fff';
+    else if(isPastel) tc='rgba(30,30,60,0.85)';
+    else tc='#fff';
+
+    ctx.fillStyle=tc;
+    ctx.textAlign='right';
+
+    // Text shadow by type
+    if(isNeon){
+      ctx.shadowColor='rgba(0,0,0,0.45)';ctx.shadowBlur=3;
+    } else if(isMetal){
+      ctx.shadowColor='rgba(0,0,0,0.7)';ctx.shadowBlur=3;
+    } else if(isPastel){
+      ctx.shadowColor='rgba(0,0,0,0.2)';ctx.shadowBlur=2;
+    } else {
+      ctx.shadowColor='rgba(0,0,0,0.55)';ctx.shadowBlur=4;
+    }
+
     const mc=Math.max(5,Math.floor(r*0.38));
-    ctx.fillText(items[i].length>mc?items[i].slice(0,mc)+'…':items[i],r-12,fs*0.37);
+    // Show only text before ':' if present (e.g. "Question 1: long text..." → "Question 1")
+    const raw=items[i];
+    const colonIdx=raw.indexOf(':');
+    const displayRaw=colonIdx>0?raw.slice(0,colonIdx).trim():raw;
+    const lbl=wheelDisplayLabel(raw,mc);
+    ctx.fillText(lbl,r-12,fs*0.37);
     ctx.restore();
   }
-  ctx.beginPath();ctx.arc(cx,cy,sz*0.065,0,2*Math.PI);
-  ctx.fillStyle='#fff';ctx.shadowColor='rgba(0,0,0,0.2)';ctx.shadowBlur=6;ctx.fill();ctx.shadowBlur=0;
+
+  // Center hub
+  ctx.beginPath();ctx.arc(cx,cy,sz*0.07,0,2*Math.PI);
+  if(isNeon){
+    ctx.fillStyle='#ffffff';
+    ctx.shadowColor='rgba(0,0,0,0.15)';ctx.shadowBlur=4;
+  } else if(isMetal){
+    const hubGrad=ctx.createRadialGradient(cx-sz*0.02,cy-sz*0.02,0,cx,cy,sz*0.07);
+    hubGrad.addColorStop(0,'#ffffff');hubGrad.addColorStop(0.5,'#d0d0d0');hubGrad.addColorStop(1,'#888');
+    ctx.fillStyle=hubGrad;
+  } else {
+    ctx.fillStyle='#fff';
+    ctx.shadowColor='rgba(0,0,0,0.2)';ctx.shadowBlur=6;
+  }
+  ctx.fill();ctx.shadowBlur=0;
 }
 
-function getWinnerFromWheel(w){
-  const n=w.items.length,slice=2*Math.PI/n;
-  const offset=((-w.angle)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
-  return w.items[Math.floor(offset/slice)%n];
+// Colour helpers for metallic gradients
+function lighten(hex,amt){
+  let c=parseInt(hex.slice(1),16);
+  let r=Math.min(255,((c>>16)&255)+Math.round(255*amt));
+  let g=Math.min(255,((c>>8)&255)+Math.round(255*amt));
+  let b=Math.min(255,(c&255)+Math.round(255*amt));
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function darken(hex,amt){
+  let c=parseInt(hex.slice(1),16);
+  let r=Math.max(0,((c>>16)&255)-Math.round(255*amt));
+  let g=Math.max(0,((c>>8)&255)-Math.round(255*amt));
+  let b=Math.max(0,(c&255)-Math.round(255*amt));
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+function wheelDisplayLabel(raw,maxChars){
+  const colonIdx=raw.indexOf(':');
+  const displayRaw=colonIdx>0?raw.slice(0,colonIdx).trim():raw;
+  if(displayRaw.length<=maxChars)return displayRaw;
+  const prefix=displayRaw.match(/^(Question\s+\d+|Group\s+[A-Za-z0-9]+)/i);
+  if(prefix&&prefix[0].length<=maxChars)return prefix[0];
+  return displayRaw.slice(0,maxChars)+'…';
+}
+
+const TAU=2*Math.PI;
+function normRad(a){return a-TAU*Math.round(a/TAU);}
+
+function getWinnerIndexFromWheel(w){
+  const n=w.items.length,slice=TAU/n;
+  const pos=(((-w.angle)%TAU)+TAU)%TAU;
+  return Math.floor(pos/slice)%n;
+}
+function getWinnerFromWheel(w){return w.items[getWinnerIndexFromWheel(w)];}
+
+function rotateWheelToSegment(w,idx){
+  const slice=TAU/w.items.length;
+  const mid=normRad(normRad(w.angle)+idx*slice+slice/2);
+  w.angle-=mid;
+}
+function resolveGreySkip(w,greySet){
+  let idx=getWinnerIndexFromWheel(w);
+  if(!greySet.size||!greySet.has(idx))return idx;
+  for(let step=1;step<=w.items.length;step++){
+    const candidate=(idx+step)%w.items.length;
+    if(!greySet.has(candidate))return candidate;
+  }
+  return idx;
+}
+function saveWheelAngle(w){
+  if(w&&w.configRef&&w.configRef.id)wheelLastAngles[w.configRef.id]=w.angle;
+}
+function getWheelStartAngle(cfg,queueIndex,itemCount){
+  if(cfg.id&&wheelLastAngles[cfg.id]!==undefined)return wheelLastAngles[cfg.id];
+  if(queueIndex===1&&itemCount>=2)return(TAU/itemCount)*1.5;
+  return 0;
 }
 
 function redrawActive(){
   if(!activeWheel)return;
   const c=document.getElementById('active-canvas');
-  if(c)drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+  if(c)drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[]);
 }
 
 /* ══ WHEEL QUEUE SYSTEM ════════════════════════════════════════
@@ -589,17 +804,26 @@ function loadNextWheel(animate=true){
 
 function syncActiveToDOM(){
   if(!activeWheel)return;
-  document.getElementById('active-wheel-title').value=activeWheel.title||'Wheel';
+  const titleEl = document.getElementById('active-wheel-title');
+  if(titleEl) titleEl.value=activeWheel.title||'Wheel';
   const c=document.getElementById('active-canvas');
   const sz=c.parentElement.clientWidth||340;
   c.width=sz;c.height=sz;
-  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[]);
   const btn=document.getElementById('main-spin-btn');
   btn.disabled=false;
-  btn.textContent=`⟳ Spin ${activeWheel.title||'wheel'}`;
+  btn.textContent='⟳ Spin '+(activeWheel.title||'wheel');
   btn.className='spin-btn '+(mode==='teacher'?'t':activeWheel.key==='s3'?'p':'s');
-  document.getElementById('main-result').textContent='—';
-  document.getElementById('main-result').classList.remove('flash');
+  if(mode==='teacher'&&teacherQuizEnded)setTeacherQuizCompleteUI();
+  const rp=document.getElementById('main-result');
+  if(rp){rp.textContent='—';rp.classList.remove('flash');}
+  // Apply neon background if this wheel uses neon palette
+  const stage=document.getElementById('wheel-stage');
+  if(stage){
+    const palIdx=COLOR_PALETTES.findIndex(p=>p===activeWheel.colors);
+    const ptype=PALETTE_TYPES?.[palIdx]||'solid';
+    stage.classList.toggle('neon-bg', ptype==='neon'||ptype==='flat-neon');
+  }
 }
 
 function archiveWheel(w,resultText){
@@ -620,44 +844,99 @@ function archiveWheel(w,resultText){
 }
 
 /* ══ SPIN ACTION ══════════════════════════════════════════════ */
+function isTeacherQuizComplete(){
+  const cfg=teacherWheelConfigs[0];
+  if(!cfg)return false;
+  const items=cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!items.length)return false;
+  const asked=cfg.askedQuestions||new Set();
+  return items.every(q=>asked.has(q));
+}
+function setTeacherQuizCompleteUI(){
+  const btn=document.getElementById('main-spin-btn');
+  if(btn){
+    btn.disabled=true;
+    btn.textContent='✓ All questions asked';
+    btn.className='spin-btn t';
+  }
+}
+
 function spinActive(){
+  if(teacherQuizEnded)return;
   if(!activeWheel||activeWheel.spinning)return;
   try{getCtx().resume();}catch(e){}
+  
   // Switch to this wheel's assigned sound
   if (activeWheel.soundKey) currentSound = activeWheel.soundKey;
   activeWheel.spinning=true;
   document.getElementById('main-spin-btn').disabled=true;
-  const totalRot=(5+Math.random()*5)*2*Math.PI;
+  
+  // ----------------------------------------------------
+  // FIX: Pre-calculate the exact winning wedge to avoid visual snapping
+  // ----------------------------------------------------
+  const greySet=new Set(activeWheel.greyIndices||[]);
+  if(activeWheel.greyIdx>=0)greySet.add(activeWheel.greyIdx);
+  
+  const validIndices=[];
+  for(let i=0;i<activeWheel.items.length;i++){
+    if(!greySet.has(i))validIndices.push(i);
+  }
+  // Fallback (should never happen unless all are somehow grey)
+  if(validIndices.length===0) validIndices.push(0);
+
+  // Pick a random valid index
+  const targetIdx = validIndices[Math.floor(Math.random() * validIndices.length)];
+  const slice = TAU / activeWheel.items.length;
+  
+  // Target the exact dead center of the winning wedge
+  const finalTargetAngle = -(targetIdx * slice + slice/2);
+  
+  // Create a randomized spin base, plus the exact needed offset
+  const baseSpins = (5 + Math.floor(Math.random() * 5)) * TAU;
+  let diff = (finalTargetAngle - activeWheel.angle) % TAU;
+  if (diff < 0) diff += TAU;
+  
+  const totalRot = baseSpins + diff;
+  // ----------------------------------------------------
+
   const dur=2800+Math.random()*700;
   const t0=performance.now(),a0=activeWheel.angle;
   const c=document.getElementById('active-canvas');
   startSpinSound(dur);
+  
   function frame(now){
     const pct=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-pct,4);
     activeWheel.angle=a0+totalRot*ease;
-    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[]);
+    
     if(pct<1){requestAnimationFrame(frame);return;}
+    
     stopSpinSound();
     activeWheel.spinning=false;
-    // Get winner — if greyIdx matches, nudge
-    let winner=getWinnerFromWheel(activeWheel);
-    if(activeWheel.greyIdx>=0&&winner===activeWheel.items[activeWheel.greyIdx]){
-      activeWheel.angle+=(2*Math.PI/activeWheel.items.length);
-      drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
-      winner=getWinnerFromWheel(activeWheel);
-    }
+    
+    // Resolve grey skip (kept as a failsafe, but our pre-calc guarantees it won't be needed)
+    let idx=resolveGreySkip(activeWheel,greySet);
+    rotateWheelToSegment(activeWheel,idx);
+    saveWheelAngle(activeWheel);
+    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[]);
+    
+    // Re-read index post-snap
+    const snapIdx=getWinnerIndexFromWheel(activeWheel);
+    const winner=activeWheel.items[snapIdx];
+    
     // Flash result
     const rp=document.getElementById('main-result');
     rp.textContent=winner;
     rp.classList.add('flash');
     setTimeout(()=>rp.classList.remove('flash'),800);
-    // Voice narration: speak "[name], [phrase]" if this wheel has voice enabled
+    
+    // Voice narration
     const phrase = (activeWheel.narration || '').trim();
-    const voiceEnabled = activeWheel.voiceOn !== false; // default true per wheel
-    if (voiceEnabled) {
-      speakAlways(phrase ? winner + ', ' + phrase : winner);
+    const wv = activeWheel.wheelVoice || 'female';
+    if (wv !== 'off') {
+      speakWithGender(phrase ? winner + ', ' + phrase : winner, wv);
     }
-    // Handle based on key
+    
     onWheelResult(activeWheel.key, winner);
   }
   requestAnimationFrame(frame);
@@ -673,29 +952,54 @@ function spinActive(){
    Delete → removes (min 1 must remain).
 ══════════════════════════════════════════════════════════════════ */
 
+// PALETTE_TYPES: 'solid' | 'neon' | 'metallic' | 'mono'
+// Each palette entry: { type, colors[], label }
 const COLOR_PALETTES = [
+  // 0 — Classic vibrant (original)
   ['#E53935','#F4511E','#F4B400','#0F9D58','#1967D2','#8E24AA','#00ACC1','#FB8C00','#43A047','#F06292'],
+  // 1 — Classic cool (original)
   ['#1967D2','#0F9D58','#8E24AA','#F4511E','#F4B400','#00ACC1','#E53935','#43A047','#FB8C00','#F06292'],
-  ['#C62828','#AD1457','#6A1B9A','#1565C0','#00695C','#E65100','#558B2F','#4527A0','#00838F','#558B2F'],
-  ['#FF7043','#FFCA28','#66BB6A','#42A5F5','#AB47BC','#26C6DA','#EF5350','#FFA726','#26A69A','#EC407A'],
+  // 2 — Neon glow (white-bg style — vivid segments + white dividers)
+  ['#8E24AA','#1565C0','#2E7D32','#F9A825','#C62828','#00838F','#6A1B9A','#EF6C00','#AD1457','#0277BD'],
+  // 3 — Flat neon solid (new)
+  ['#FF003C','#FF6B00','#FFD000','#00E676','#00B0FF','#AA00FF','#FF1493','#76FF03','#FF5722','#00E5FF'],
+  // 4 — Metallic (new) — alternating light and dark to avoid adjacent match
+  ['#D4AF37','#5A5A5A','#CD7F32','#888888','#B8860B','#363636','#C0C0C0','#4A4A4A','#8B7355','#6A6A6A'],
+  // 5 — Monochrome (new) — shades of one hue (blue-grey)
+  ['#1A1D2E','#2C3E50','#34495E','#4A6580','#5D7FA0','#7095B2','#8AAEC7','#A3C4D9','#BDDBEB','#D6EEF8'],
+  // 6 — Pastel soft (new)
+  ['#FFB3BA','#FFDFBA','#FFFFBA','#BAFFC9','#BAE1FF','#D4BAFF','#FFB3F7','#C9F7BA','#FFD4BA','#BAF7F7'],
+  // 7 — Dark bold (new)
+  ['#B71C1C','#E65100','#F57F17','#1B5E20','#0D47A1','#4A148C','#006064','#BF360C','#1A237E','#880E4F'],
 ];
-const PALETTE_PREVIEWS = ['🔴','🔵','🟣','🟠'];
+const PALETTE_TYPES = [
+  'solid','solid','neon','flat-neon','metallic','mono','pastel','dark'
+];
+const PALETTE_LABELS = [
+  'Classic Vivid','Classic Cool','✨ Neon Glow','⚡ Flat Neon','🥇 Metallic','⬛ Monochrome','🌸 Pastel','🌑 Dark Bold'
+];
+const PALETTE_PREVIEWS = ['🔴','🔵','✨','⚡','🥇','⬛','🌸','🌑'];
 
 let teacherWheelConfigs = [];
 let studentWheelConfigs = [];
 
 const T_DEFAULTS = [
-  { title:'📚 Wheel 1 — Topics', items:'Fractions\nDecimals\nGeometry\nAlgebra\nWord Problems', paletteIdx:0, soundKey:'kalimba', narration:'is the topic!', voiceOn:true, enabled:true },
-  { title:'👥 Wheel 2 — Groups', items:'Group A\nGroup B\nGroup C\nGroup D', paletteIdx:1, soundKey:'chime', narration:'please answer!', voiceOn:true, enabled:true },
+{ title:'❓ Teacher Wheel 1 — Questions', items:'Question 1: Which animal says “meow”? a) Dog. b) Cat. c) Cow. d) Duck.\nQuestion 2: Which animal is known for having a long trunk? a) Lion. b) Elephant. c) Monkey. d) Rabbit.\nQuestion 3: Which animal can fly in the sky? a) Fish. b) Tiger. c) Bird. d) Horse.\nQuestion 4: Which animal lives in water and has fins? a) Fish. b) Bear. c) Zebra. d) Kangaroo.\nQuestion 5: Which animal is very tall with a long neck? a) Giraffe. b) Panda. c) Dog. d) Goat.\nQuestion 6: Which animal likes to eat bamboo? a) Panda. b) Lion. c) Crocodile. d) Fox.\nQuestion 7: Which animal says “woof”? a) Cat. b) Duck. c) Dog. d) Cow.\nQuestion 8: Which animal hops and carries babies in a pouch? a) Kangaroo. b) Tiger. c) Sheep. d) Camel.\nQuestion 9: Which animal is called the king of the jungle? a) Rabbit. b) Lion. c) Deer. d) Pig.\nQuestion 10: Which animal has black and white stripes? a) Zebra. b) Panda. c) Rhino. d) Camel.', paletteIdx:0, soundKey:'kalimba', narration:'Please answer', wheelVoice:'female', enabled:true, askedQuestions:new Set(), eliminateSpinBefore:true },
+
+  { title:'👥 Wheel 2 — Students', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true },
 ];
 const S_DEFAULTS = [
-  { title:'❓ Wheel 1 — Askers',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', voiceOn:true, enabled:true },
-  { title:'🙋 Wheel 2 — Answerers',   items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:1, soundKey:'chime',   narration:'please answer!', voiceOn:true, enabled:true },
-  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', voiceOn:true, enabled:true },
+  { title:'❓ Wheel 1 — Askers',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', wheelVoice:'female', enabled:true, eliminateSpinBefore:true },
+  { title:'🙋 Wheel 2 — Answerers',   items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:1, soundKey:'chime',   narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true },
+  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true },
 ];
 
 function initWheelConfigs() {
-  teacherWheelConfigs = T_DEFAULTS.map((d,i) => ({...d, id:'t-wc-'+i}));
+  teacherWheelConfigs = T_DEFAULTS.map((d,i) => {
+    const cfg = {...d, id:'t-wc-'+i};
+    if (i === 0) cfg.askedQuestions = new Set();
+    return cfg;
+  });
   studentWheelConfigs = S_DEFAULTS.map((d,i) => ({...d, id:'s-wc-'+i}));
   renderWheelConfigs('teacher');
   renderWheelConfigs('student');
@@ -726,12 +1030,15 @@ function renderWheelConfigs(m) {
     const modeColor  = m==='teacher' ? 'var(--blue)' : 'var(--green)';
     const modeBg     = m==='teacher' ? 'var(--blue-l)' : 'var(--green-l)';
 
-    // Colour dots
-    const dots = COLOR_PALETTES.map((pal, pi) =>
-      `<div class="color-dot ${cfg.paletteIdx===pi?'sel':''}"
-        style="background:linear-gradient(135deg,${pal[0]},${pal[2]},${pal[4]})"
-        onclick="setPalette('${m}',${idx},${pi})" title="Palette ${pi+1}"></div>`
-    ).join('');
+    // Colour dots — 8 palettes as gradient circles
+    const dots = COLOR_PALETTES.map((pal, pi) => {
+      const label = PALETTE_LABELS?.[pi] || ('Palette '+(pi+1));
+      const ptype = PALETTE_TYPES?.[pi] || 'solid';
+      const glow = ptype==='neon' ? `box-shadow:0 0 6px ${pal[0]},0 0 10px ${pal[2]};` : '';
+      return `<div class="color-dot ${cfg.paletteIdx===pi?'sel':''}"
+        style="background:linear-gradient(135deg,${pal[0]},${pal[2]},${pal[4]});${glow}"
+        onclick="setPalette('${m}',${idx},${pi})" title="${label}"></div>`;
+    }).join('');
 
     // Sound buttons
     const soundBtns = SOUNDS.map(s =>
@@ -775,11 +1082,14 @@ function renderWheelConfigs(m) {
           onblur="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
         >${cfg.items}</textarea>
 
-        <!-- Colour + Sound side by side -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
           <div>
             <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">🎨 Wheel colour</div>
-            <div class="wheel-color-pick">${dots}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+              <canvas id="prev-${m}-${idx}" width="44" height="44"
+                style="border-radius:50%;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.15)"></canvas>
+              <div class="wheel-color-pick">${dots}</div>
+            </div>
           </div>
           <div>
             <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">🔊 Spin sound</div>
@@ -787,7 +1097,6 @@ function renderWheelConfigs(m) {
           </div>
         </div>
 
-        <!-- Custom narration -->
         <div style="margin-top:10px">
           <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">
             🗣 After spin — voice says: <span style="font-weight:400;text-transform:none;letter-spacing:0">[name] + your phrase</span>
@@ -807,17 +1116,34 @@ function renderWheelConfigs(m) {
           <div style="font-size:10px;color:var(--muted);margin-top:3px">Max 40 chars (~3–5 sec). Example: <em>"please answer!"</em> or <em>"your turn 🎉"</em></div>
         </div>
 
+        <div id="esb-row-${m}-${idx}" style="margin-top:10px;padding:8px 10px;border-radius:8px;border:1.5px solid ${cfg.eliminateSpinBefore ? modeColor : 'var(--border)'};background:${cfg.eliminateSpinBefore ? modeBg : 'var(--bg)'};display:flex;align-items:flex-start;gap:8px;cursor:pointer;transition:all 0.15s"
+          onclick="toggleEliminateSpinBefore('${m}',${idx})">
+          <input type="checkbox" id="esb-chk-${m}-${idx}"
+            ${cfg.eliminateSpinBefore ? 'checked' : ''}
+            onclick="event.stopPropagation();toggleEliminateSpinBefore('${m}',${idx})"
+            style="margin-top:2px;width:14px;height:14px;accent-color:${modeColor};cursor:pointer;flex-shrink:0">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:${cfg.eliminateSpinBefore ? modeColor : 'var(--text)'};line-height:1.3">
+              🚫 Eliminate Wheel Spin Before
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4">
+              When checked, items already spun in previous rounds will be greyed out and skipped automatically.
+            </div>
+          </div>
+        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
           <div style="display:flex;align-items:center;gap:6px">
             <span style="font-size:10px;color:var(--muted)">${itemCount} items</span>
             <button onclick="toggleWheelVoice('${m}',${idx})"
+              id="wv-btn-${m}-${idx}"
               style="padding:3px 9px;border-radius:7px;
-                border:1.5px solid ${cfg.voiceOn ? modeColor : 'var(--border)'};
-                background:${cfg.voiceOn ? modeBg : 'transparent'};
-                color:${cfg.voiceOn ? modeColor : 'var(--muted)'};
-                font-size:11px;font-weight:700;cursor:pointer"
-              title="Toggle voice narration for this wheel">
-              ${cfg.voiceOn ? '🔊 Voice ON' : '🔇 Voice OFF'}
+                border:1.5px solid ${cfg.wheelVoice==='off' ? 'var(--border)' : modeColor};
+                background:${cfg.wheelVoice==='female' ? '#FCE4EC' : cfg.wheelVoice==='male' ? '#E3F2FD' : 'transparent'};
+                color:${cfg.wheelVoice==='female' ? '#C2185B' : cfg.wheelVoice==='male' ? '#0D47A1' : 'var(--muted)'};
+                font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap"
+              title="Cycle: Male → Female → Off">
+              ${cfg.wheelVoice==='female' ? '👩 Female' : cfg.wheelVoice==='male' ? '👨 Male' : '🔇 Off'}
             </button>
           </div>
           ${canDelete
@@ -828,6 +1154,27 @@ function renderWheelConfigs(m) {
       </div>`;
     container.appendChild(div);
   });
+  // Draw mini previews after DOM is built (setTimeout so canvases are in DOM)
+  setTimeout(() => drawAllMiniPreviews(m), 0);
+}
+
+/* Draw mini 48px preview wheel inside a config card */
+function drawMiniPreview(m, idx) {
+  const configs = getConfigs(m);
+  if (!configs[idx]) return;
+  const cfg = configs[idx];
+  const canvas = document.getElementById('prev-' + m + '-' + idx);
+  if (!canvas) return;
+  const items = cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
+  if (!items.length) return;
+  const colors = COLOR_PALETTES[cfg.paletteIdx] || C1;
+  drawWheelOnCanvas(canvas, items, colors, 0, -1);
+}
+
+/* Draw all mini previews for a mode after render */
+function drawAllMiniPreviews(m) {
+  const configs = getConfigs(m);
+  configs.forEach((_, i) => drawMiniPreview(m, i));
 }
 
 function toggleConfigOpen(m, idx) {
@@ -879,31 +1226,81 @@ function updateConfigItems(m, idx, val) {
     const countEl = bodies[idx].querySelector('span[style*="10px"]');
     if (countEl) countEl.textContent = val.split('\n').filter(s=>s.trim()).length + ' items';
   }
+  // Redraw mini preview as items change
+  drawMiniPreview(m, idx);
+  // Also update active stage wheel live if this config is on stage
+  if (activeWheel && activeWheel.configRef?.id === configs[idx].id) {
+    const items = val.split('\n').map(s=>s.trim()).filter(Boolean);
+    if (items.length >= 2) {
+      activeWheel.items = items;
+      const c = document.getElementById('active-canvas');
+      if (c) drawWheelOnCanvas(c, activeWheel.items, activeWheel.colors, activeWheel.angle, activeWheel.greyIdx);
+    }
+  }
+}
+
+/* Live-preview the selected wheel config on the main stage (left wheel) */
+function previewConfigOnStage(m, idx) {
+  const cfg = getConfigs(m)[idx];
+  if (!cfg) return;
+  const items = cfg.items.split('\n').map(s => s.trim()).filter(Boolean);
+  if (items.length < 2) return;
+  const colors = COLOR_PALETTES[cfg.paletteIdx] || (m === 'teacher' ? C1 : C2);
+  const angle = getWheelStartAngle(cfg, idx, items.length);
+  const w = buildWheel('custom-' + idx, cfg.title, items, colors, angle);
+  w.configRef = cfg;
+  w.soundKey = cfg.soundKey || 'kalimba';
+  w.narration = cfg.narration || '';
+  w.wheelVoice = cfg.wheelVoice || 'female';
+  if (m === 'teacher' && idx === 0 && cfg.askedQuestions?.size > 0) {
+    w.greyIndices = [];
+    items.forEach((item, i) => { if (cfg.askedQuestions.has(item)) w.greyIndices.push(i); });
+  }
+  if (activeWheel?.spinning) return;
+  activeWheel = w;
+  syncActiveToDOM();
 }
 
 function setPalette(m, idx, pi) {
   const configs = getConfigs(m);
-  configs[idx].paletteIdx = pi;
-  // Instantly update active wheel if it's this config
-  if (activeWheel && activeWheel.configRef === configs[idx]) {
-    activeWheel.colors = COLOR_PALETTES[pi];
-    const c = document.getElementById('active-canvas');
-    if (c) drawWheelOnCanvas(c, activeWheel.items, activeWheel.colors, activeWheel.angle, activeWheel.greyIdx);
-  }
-  // Update color dots in-place — no full re-render (keeps focus)
-  const cfgEl = document.getElementById(configs[idx].id);
+  const cfg = configs[idx];
+  cfg.paletteIdx = pi;
+  const newColors = COLOR_PALETTES[pi];
+  const cfgId = cfg.id;
+
+  // Update any queued wheels that reference this config
+  wheelQueue.forEach(w => {
+    if (w.configRef?.id === cfgId) w.colors = newColors;
+  });
+
+  // Update color dots in-place (no full re-render — preserves input focus)
+  const cfgEl = document.getElementById(cfgId);
   if (cfgEl) {
     cfgEl.querySelectorAll('.color-dot').forEach((dot, di) => {
       dot.classList.toggle('sel', di === pi);
     });
   }
+
+  drawMiniPreview(m, idx);
+  // Main stage live preview — same behaviour for every wheel (e.g. Wheel 2 as well as Wheel 1)
+  if (!activeWheel?.spinning) previewConfigOnStage(m, idx);
+  else if (activeWheel.configRef?.id === cfgId) {
+    activeWheel.colors = newColors;
+    syncActiveToDOM();
+  }
 }
 
 function setWheelSound(m, idx, key) {
   const configs = getConfigs(m);
-  configs[idx].soundKey = key;
+  const cfg = configs[idx];
+  cfg.soundKey = key;
+  const cfgId = cfg.id;
+  if (activeWheel && activeWheel.configRef?.id === cfgId) {
+    activeWheel.soundKey = key;
+    currentSound = key;
+  }
+  wheelQueue.forEach(w => { if (w.configRef?.id === cfgId) w.soundKey = key; });
   renderWheelConfigs(m);
-  if (activeWheel && activeWheel.configRef === configs[idx]) currentSound = key;
 }
 
 function updateNarration(m, idx, val) {
@@ -917,26 +1314,26 @@ function updateNarration(m, idx, val) {
 
 function toggleWheelVoice(m, idx) {
   const configs = getConfigs(m);
-  configs[idx].voiceOn = !configs[idx].voiceOn;
-  // Update active wheel live
-  if (activeWheel && activeWheel.configRef === configs[idx]) {
-    activeWheel.voiceOn = configs[idx].voiceOn;
-  }
-  // Update button in-place — no full re-render (avoids focus loss)
-  const cfgEl = document.getElementById(configs[idx].id);
-  if (cfgEl) {
-    const modeColor = m==='teacher' ? 'var(--blue)' : 'var(--green)';
-    const modeBg    = m==='teacher' ? 'var(--blue-l)' : 'var(--green-l)';
-    const vBtn = cfgEl.querySelectorAll('button');
-    vBtn.forEach(btn => {
-      if (btn.textContent.includes('Voice')) {
-        const on = configs[idx].voiceOn;
-        btn.textContent = on ? '🔊 Voice ON' : '🔇 Voice OFF';
-        btn.style.border = `1.5px solid ${on ? modeColor : 'var(--border)'}`;
-        btn.style.background = on ? modeBg : 'transparent';
-        btn.style.color = on ? modeColor : 'var(--muted)';
-      }
-    });
+  const cfg = configs[idx];
+  // Cycle: female → male → off → female
+  if (!cfg.wheelVoice || cfg.wheelVoice === 'off')    cfg.wheelVoice = 'female';
+  else if (cfg.wheelVoice === 'female')               cfg.wheelVoice = 'male';
+  else                                                 cfg.wheelVoice = 'off';
+
+  // Sync to any active/queued wheel referencing this config
+  const cfgId = cfg.id;
+  if (activeWheel && activeWheel.configRef?.id === cfgId) activeWheel.wheelVoice = cfg.wheelVoice;
+  wheelQueue.forEach(w => { if (w.configRef?.id === cfgId) w.wheelVoice = cfg.wheelVoice; });
+
+  // Update button in-place — no full re-render (avoids input focus loss)
+  const modeColor = m==='teacher' ? '#1565C0' : '#2E7D32';
+  const btn = document.getElementById('wv-btn-' + m + '-' + idx);
+  if (btn) {
+    const v = cfg.wheelVoice;
+    btn.textContent  = v==='female' ? '👩 Female' : v==='male' ? '👨 Male' : '🔇 Off';
+    btn.style.border = `1.5px solid ${v==='off' ? 'var(--border)' : modeColor}`;
+    btn.style.background = v==='female' ? '#FCE4EC' : v==='male' ? '#E3F2FD' : 'transparent';
+    btn.style.color  = v==='female' ? '#C2185B' : v==='male' ? '#0D47A1' : 'var(--muted)';
   }
 }
 
@@ -950,9 +1347,10 @@ function addWheelConfig(m) {
     paletteIdx: num % COLOR_PALETTES.length,
     soundKey: 'kalimba',
     narration: 'your turn!',
-    voiceOn: true,
+    wheelVoice: 'female',
     enabled: true,
     isOpen: true,
+    eliminateSpinBefore: true,
   });
   renderWheelConfigs(m);
 }
@@ -969,22 +1367,78 @@ function syncActiveTitleFromConfigs() {
 }
 
 /* ── Build queue from configs ──────────────────────────────── */
-function buildQueueFromConfigs(m) {
+function isPunishWheel(cfg) {
+  return (cfg.title||'').toLowerCase().includes('punish') || (cfg.title||'').includes('😂');
+}
+
+function buildQueueFromConfigs(m, includePunishment=false) {
   const configs = getConfigs(m);
   const enabled = configs.filter(c => c.enabled);
   if (enabled.length === 0) return [];
-  return enabled.map((cfg, i) => {
+  // For student mode, exclude punishment wheels from the main round queue
+  // They are added dynamically by sMark(false) only when answer is wrong
+  const filtered = (m === 'student' && !includePunishment)
+    ? enabled.filter(c => !isPunishWheel(c))
+    : enabled;
+  if (filtered.length === 0) return [];
+  return filtered.map((cfg, i) => {
     const items = cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
     const colors = COLOR_PALETTES[cfg.paletteIdx] || C1;
-    const offset = i === 1 && items.length >= 2 ? (2*Math.PI/items.length)*1.5 : 0;
-    const w = buildWheel('custom-'+i, cfg.title, items, colors, offset);
-    w.configRef  = cfg;
-    w.soundKey   = cfg.soundKey  || 'kalimba';
-    w.narration  = cfg.narration || '';
-    w.voiceOn    = cfg.voiceOn !== false; // default true
+    const w = buildWheel('custom-'+i, cfg.title, items, colors, getWheelStartAngle(cfg,i,items.length));
+    w.configRef   = cfg;
+    w.soundKey    = cfg.soundKey  || 'kalimba';
+    w.narration   = cfg.narration || '';
+    w.wheelVoice  = cfg.wheelVoice || 'female'; // per-wheel voice gender
     w.isLastWheel = false;
+    // Grey out previously picked items on ANY wheel when eliminateSpinBefore is enabled.
+    // Wheel 1 uses askedQuestions; all other wheels use pickedItems (same pattern).
+    if (cfg.eliminateSpinBefore !== false) {
+      const history = (m === 'teacher' && i === 0) ? cfg.askedQuestions : cfg.pickedItems;
+      if (history && history.size > 0) {
+        const greyIndices = [];
+        items.forEach((item, idx) => { if (history.has(item)) greyIndices.push(idx); });
+        if (greyIndices.length > 0) w.greyIndices = greyIndices;
+      }
+    }
     return w;
   });
+}
+
+function getPunishWheelFromConfigs() {
+  const configs = studentWheelConfigs.filter(c => c.enabled && isPunishWheel(c));
+  if (!configs.length) return null;
+  const cfg = configs[0];
+  const items = cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
+  const colors = COLOR_PALETTES[cfg.paletteIdx] || CP;
+  const w = buildWheel('punish', cfg.title, items, colors, getWheelStartAngle(cfg,-1,items.length));
+  w.configRef   = cfg;
+  w.soundKey    = cfg.soundKey   || 'drum';
+  w.narration   = cfg.narration   || '';
+  w.wheelVoice  = cfg.wheelVoice  || 'female';
+  w.isLastWheel = true;
+  return w;
+}
+
+/* ══ SCORE SETTINGS ════════════════════════════════════════════ */
+function updateScoreSettings() {
+  const correctInput = document.getElementById('t-score-correct');
+  const wrongInput = document.getElementById('t-score-wrong');
+  if (!correctInput || !wrongInput) return;
+
+  scoreCorrect = parseInt(correctInput.value) || 10;
+  scoreWrong = parseInt(wrongInput.value) || 0;
+
+  // Update preview
+  const correctPreview = document.getElementById('t-preview-correct');
+  const wrongPreview = document.getElementById('t-preview-wrong');
+  if (correctPreview) correctPreview.textContent = scoreCorrect;
+  if (wrongPreview) wrongPreview.textContent = scoreWrong;
+
+  // Update button labels in real-time
+  const okBtn = document.getElementById('t-ok');
+  const noBtn = document.getElementById('t-no');
+  if (okBtn) okBtn.innerHTML = `✓ Correct<br><small>+${scoreCorrect} pts</small>`;
+  if (noBtn) noBtn.innerHTML = `✗ Wrong<br><small>${scoreWrong} pts</small>`;
 }
 
 /* ══ START GAMES (rewritten to use configs) ══════════════════ */
@@ -995,6 +1449,12 @@ function startTeacher() {
     if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
   }
   scores={}; topicS={}; scoreboardNames=new Set(); rounds=correct=wrongs=0; sessionLog=[]; archivedWheels=[];
+  Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
+  teacherQuizEnded=false;
+  if(teacherWheelConfigs[0])teacherWheelConfigs[0].askedQuestions=new Set();
+  // Reset pickedItems on all configs so elimination history starts fresh each game
+  teacherWheelConfigs.forEach(cfg => cfg.pickedItems = new Set());
+  studentWheelConfigs.forEach(cfg => cfg.pickedItems = new Set());
   // Only the LAST wheel's items go on the scoreboard (groups/answerers)
   const lastW = queue[queue.length-1];
   lastW.items.forEach(item => { scores[item]=0; scoreboardNames.add(item); });
@@ -1016,6 +1476,7 @@ function startStudent() {
     if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
   }
   scores={}; punishCt={}; scoreboardNames=new Set(); rounds=correct=wrongs=punishments=0; sessionLog=[]; archivedWheels=[];
+  Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
   // Collect ALL player names across non-punishment wheels for scoring
   queue.forEach((w,wi) => {
     const isPunish = (w.title||'').toLowerCase().includes('punish') || w.title.includes('😂');
@@ -1039,60 +1500,95 @@ function startStudent() {
 function onWheelResult(key, winner) {
   archiveWheel(activeWheel, winner);
 
-  const isLast = activeWheel.isLastWheel || wheelQueue.length === 0;
-  const wTitle = activeWheel.title || 'Wheel';
+  // Track wheel results by spin order (clean, mode-independent)
+  const spinIndex = archivedWheels.length - 1; // 0=first, 1=second, 2=third...
 
-  // Track curAsker / curTopic for grey-out on next wheel
-  if (!curAsker) curAsker = winner;
-  else if (!curAnswerer) curAnswerer = winner;
-  else if (!curTopic) curTopic = winner;
-  else curGroup = winner;
+  // Store in mode-specific variables ONLY
+  if (mode === 'teacher') {
+    if (spinIndex === 0) {
+      curTopic = winner;
+      // Track this question as asked — grey it out next time
+      const t1cfg = teacherWheelConfigs[0];
+      if (t1cfg && !t1cfg.askedQuestions) t1cfg.askedQuestions = new Set();
+      if (t1cfg) t1cfg.askedQuestions.add(winner);
+    }
+    else                 curGroup = winner;
+  } else {
+    if (spinIndex === 0) curAsker   = winner;
+    else                 curAnswerer = winner;
+  }
+  // For non-Wheel-1 wheels: record winner into pickedItems on the config so
+  // buildQueueFromConfigs can grey it out next round when eliminateSpinBefore is on.
+  if (activeWheel.configRef && !(mode === 'teacher' && spinIndex === 0)) {
+    const cfg = activeWheel.configRef;
+    if (cfg.eliminateSpinBefore !== false) {
+      if (!cfg.pickedItems) cfg.pickedItems = new Set();
+      cfg.pickedItems.add(winner);
+    }
+  }
 
   // Grey out the winner on the NEXT wheel if same items exist (anti-duplicate)
+  // This same-round cross-wheel dedup always applies regardless of eliminateSpinBefore.
+  // (eliminateSpinBefore only governs greyIndices — the across-rounds history on Wheel 1)
   if (wheelQueue.length > 0) {
     const nextW = wheelQueue[0];
     const gi = nextW.items.indexOf(winner);
     if (gi >= 0) nextW.greyIdx = gi;
   }
 
+  const isLast  = activeWheel.isLastWheel || wheelQueue.length === 0;
+  const wTitle  = activeWheel.title || 'Wheel';
+  const allResults = archivedWheels.map(w=>w.result).join(' → ');
+
   if (isLast) {
-    // All wheels done — show summary popup, enable answer buttons
-    const allResults = archivedWheels.map(w=>w.result).join(' → ');
     if (mode === 'teacher') {
-      showOv('🎯', 'Ready to answer!', `${allResults}\n\nMark the answer above ↑`, 'info');
+      // Teacher: all wheels done, enable correct/wrong
+      showOv('🎯', 'Ready to answer!', allResults + '\n\nMark the answer above ↑', 'info');
       document.getElementById('t-ok').disabled = false;
       document.getElementById('t-no').disabled = false;
+      document.getElementById('main-spin-btn').disabled = true;
+      document.getElementById('main-spin-btn').textContent = 'Mark answer ↑';
+
     } else {
-      // Check if last wheel is a punishment wheel (no answer needed)
-      const lastTitle = (activeWheel.title||'').toLowerCase();
-      const isPunishment = lastTitle.includes('punish') || lastTitle.includes('😂');
+      // Student mode — check if this final wheel IS the punishment wheel
+      const isPunishment = isPunishWheel(activeWheel);
       if (isPunishment) {
+        // Punishment spin resolved — give asker +5, no answer buttons needed
         punishments++;
         document.getElementById('s-p').textContent = punishments;
-        if (curAnswerer) punishCt[curAnswerer] = (punishCt[curAnswerer]||0)+1;
-        if (curAsker) scores[curAsker] = (scores[curAsker]||0)+5;
+        // Get names from archived non-punishment wheels
+        const nonPunish = archivedWheels.filter(w => !isPunishWheel({title:w.title}));
+        const askerName    = nonPunish[0]?.result || '—';
+        const answererName = nonPunish[1]?.result || askerName;
+        if (punishCt[answererName] !== undefined) punishCt[answererName]++;
+        if (scores[askerName]      !== undefined) scores[askerName] = (scores[askerName]||0)+5;
         playPunishSound();
-        showOv('😂', (curAnswerer||'Someone')+' gets punished!',
-          winner + (curAsker ? '\n\n🎤 '+curAsker+' gets +5!' : ''), 'punish');
+        showOv('😂', answererName + ' gets punished!',
+          winner + (askerName !== '—' ? '\n\n🎤 '+askerName+' gets +5!' : ''), 'punish');
         updateSSB();
         resetRound();
-      } else if (curAsker && curAnswerer) {
-        showOv('🙋', `${curAsker} → ${curAnswerer}`,
-          `${curAsker} asks.\n${curAnswerer} must answer!\n\nMark the answer above ↑`, 'info');
-        document.getElementById('s-ok').disabled = false;
-        document.getElementById('s-no').disabled = false;
+        const q = buildQueueFromConfigs('student', false);
+        if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
       } else {
-        showOv('🎯', 'All wheels spun!', allResults + '\n\nMark the answer above ↑', 'info');
+        // Normal student last wheel — enable correct/wrong buttons
+        const askerName    = archivedWheels[0]?.result || '—';
+        const answererName = archivedWheels[1]?.result || archivedWheels[0]?.result || '—';
+        // Store cleanly for sMark to use
+        curAsker    = askerName;
+        curAnswerer = answererName;
+        showOv('🙋', askerName + ' → ' + answererName,
+          askerName + ' asks a question!\n' + answererName + ' must answer!\n\nMark result above ↑', 'info');
         document.getElementById('s-ok').disabled = false;
         document.getElementById('s-no').disabled = false;
+        document.getElementById('main-spin-btn').disabled = true;
+        document.getElementById('main-spin-btn').textContent = 'Mark answer ↑';
       }
     }
-    document.getElementById('main-spin-btn').disabled = true;
-    document.getElementById('main-spin-btn').textContent = 'Mark answer ↑';
   } else {
-    // More wheels to go — show brief popup and advance
-    showOv('🎯', `${wTitle}`, `Result: ${winner}\n\nNext: ${wheelQueue[0].title}`, 'info');
-    loadNextWheel(true);
+    // More wheels — show result on the snapped wheel; advance stage after Continue
+    const nextTitle = wheelQueue[0]?.title || 'next wheel';
+    showOv('🎯', wTitle, 'Result: ' + winner + '\n\nNext: ' + nextTitle, 'info');
+    pendingAdvanceWheel=true;
   }
 }
 
@@ -1101,24 +1597,35 @@ function tMark(ok) {
   rounds++; document.getElementById('t-r').textContent=rounds;
   const topic = archivedWheels[0]?.result || curAsker || '—';
   const group  = archivedWheels[1]?.result || curAnswerer || '—';
+  const quizDone=isTeacherQuizComplete();
   if (!topicS[topic]) topicS[topic]={c:0,w:0};
   if (ok) {
     correct++; document.getElementById('t-c').textContent=correct;
-    if (scores[group]!==undefined) scores[group]=(scores[group]||0)+10;
+    if (scores[group]!==undefined) scores[group]=(scores[group]||0)+scoreCorrect;
     topicS[topic].c++;
-    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Correct',points:10});
-    playWinSound(); launchConfetti();
-    showOv('🎉', `${group} correct!`, `+10 points! 🏆`, 'win');
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Correct',points:scoreCorrect});
+    if(!quizDone){playWinSound();launchConfetti();showOv('🎉', `${group} correct!`, `+${scoreCorrect} points! 🏆`, 'win');}
+    else playWinSound();
   } else {
     wrongs++; document.getElementById('t-w').textContent=wrongs;
     topicS[topic].w++;
-    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Wrong',points:0});
-    playLoseSound();
-    showOv('😢','Incorrect!',`${group} — 0 points this round`,'lose');
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Wrong',points:scoreWrong});
+    if(!quizDone){playLoseSound();showOv('😢','Incorrect!',`${group} — ${scoreWrong} points this round`,'lose');}
+    else playLoseSound();
   }
   updateTSB();
   document.getElementById('t-ok').disabled=true;
   document.getElementById('t-no').disabled=true;
+  if(quizDone){
+    teacherQuizEnded=true;
+    pendingAdvanceWheel=false;
+    curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
+    archivedWheels=[];
+    wheelQueue=[];
+    setTeacherQuizCompleteUI();
+    showOv('🎯','Quiz Ended!','View or Download Scoreboard\nShare your result','info');
+    return;
+  }
   resetRound();
   // Queue next round
   const q = buildQueueFromConfigs('teacher');
@@ -1141,44 +1648,45 @@ function sMark(ok) {
     if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
   } else {
     playLoseSound();
+    wrongs++; document.getElementById('t-w') && (document.getElementById('t-w').textContent=wrongs);
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong',points:0});
     document.getElementById('s-ok').disabled=true;
     document.getElementById('s-no').disabled=true;
-    // Find punishment wheel in configs (last enabled)
-    const configs = studentWheelConfigs.filter(c=>c.enabled);
-    const punishCfg = configs.find(c=>(c.title||'').toLowerCase().includes('punish')||c.title.includes('😂'));
-    if (punishCfg) {
-      const items = punishCfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
-      const pw = buildWheel('punish', punishCfg.title, COLOR_PALETTES[punishCfg.paletteIdx]||CP, items);
-      // fix arg order
-      pw.items = items; pw.colors = COLOR_PALETTES[punishCfg.paletteIdx]||CP;
-      pw.isLastWheel = true;
+    // Try to find a punishment wheel to queue
+    const pw = getPunishWheelFromConfigs();
+    if (pw) {
       wheelQueue = [pw];
+      showOv('😢',`${answerer} got it wrong!`,`Spin the punishment wheel! 👇\n🎤 ${asker} will get +5!`,'lose');
+      loadNextWheel(true);
     } else {
-      // No punishment wheel configured — just show loss
+      // No punishment wheel — just end round
+      showOv('😢',`${answerer} got it wrong!`,`No punishment wheel set.\nMoving to next round.`,'lose');
+      resetRound();
       const q = buildQueueFromConfigs('student');
-      if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; }
+      if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
     }
-    showOv('😢',`${answerer} got it wrong!`,`Spin punishment wheel! 👇\n🎤 ${asker} will get +5 if punished!`,'lose');
-    loadNextWheel(true);
   }
 }
 
 function resetRound() {
+  pendingAdvanceWheel=false;
+  // Clear ALL round tracking — prevents cross-mode/cross-round contamination
   curAsker=null; curAnswerer=null; curTopic=null; curGroup=null;
   archivedWheels=[];
-  document.getElementById('t-ok').disabled=true;
-  document.getElementById('t-no').disabled=true;
-  document.getElementById('s-ok').disabled=true;
-  document.getElementById('s-no').disabled=true;
+  ['t-ok','t-no','s-ok','s-no'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.disabled=true;
+  });
+  const btn=document.getElementById('main-spin-btn');
+  if(btn&&!teacherQuizEnded){ btn.disabled=false; btn.textContent='⟳ Spin'; }
 }
 
 /* ══ QUEUE + LEGACY stubs (kept for switchMode) ════════════ */
 function queueTeacherRound() {
-  const q = buildQueueFromConfigs('teacher');
+  const q = buildQueueFromConfigs('teacher', false);
   if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
 }
 function queueStudentRound() {
-  const q = buildQueueFromConfigs('student');
+  const q = buildQueueFromConfigs('student', false);
   if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
 }
 
@@ -1239,13 +1747,20 @@ function switchMode(m){
   document.getElementById('btn-t').className=m==='teacher'?'active-t':'';
   document.getElementById('btn-s').className=m==='student'?'active-s':'';
   // Reset and load first wheel for new mode
+  // Reset ALL tracking to prevent cross-mode contamination
   archivedWheels=[];wheelQueue=[];activeWheel=null;
+  curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
+  scores={};punishCt={};topicS={};scoreboardNames=new Set();
+  rounds=correct=wrongs=punishments=0;
   clearArchive();
   document.getElementById('main-spin-btn').disabled=false;
   document.getElementById('main-spin-btn').textContent='⟳ Spin';
   document.getElementById('main-result').textContent='Spin to begin';
-  if(m==='teacher')queueTeacherRound();
-  else queueStudentRound();
+  teacherQuizEnded=false;
+  if(m==='teacher'){
+    if(teacherWheelConfigs[0])teacherWheelConfigs[0].askedQuestions=new Set();
+    queueTeacherRound();
+  }else queueStudentRound();
 }
 
 /* ══ OVERLAY ════════════════════════════════════════════════════ */
@@ -1260,7 +1775,13 @@ function showOv(em,ti,su,type='info'){
   document.getElementById('ov-s').innerHTML=(su||'').replace(/\n/g,'<br>');
   document.getElementById('ov').classList.add('show');
 }
-function closeOv(){document.getElementById('ov').classList.remove('show');}
+function closeOv(){
+  document.getElementById('ov').classList.remove('show');
+  if(pendingAdvanceWheel){
+    pendingAdvanceWheel=false;
+    if(wheelQueue.length>0) loadNextWheel(true);
+  }
+}
 
 /* ══ REPORT MODAL ═══════════════════════════════════════════════ */
 function showReport(m){
@@ -1354,60 +1875,63 @@ function downloadLog(m){
 /* ── 3-STATE VOICE SYSTEM ──────────────────────────────────────
    voiceGender cycles: 'off' → 'female' → 'male' → 'off'
    speakAlways(text) respects voiceGender to pick correct voice.
-   Per-wheel voiceOn flag gates whether speakAlways is called at all.
+   Per-wheel wheelVoice gates which voice gender is used (female/male/off).
 ──────────────────────────────────────────────────────────────── */
-function toggleNarration() {
-  // Cycle: off → female → male → off
-  if (voiceGender === 'off')    voiceGender = 'female';
-  else if (voiceGender === 'female') voiceGender = 'male';
-  else                          voiceGender = 'off';
-  narrationOn = voiceGender !== 'off';
+/* ── MASTER MUTE TOGGLE ────────────────────────────────────────
+   globalMuted = true  → ALL sound effects AND voice are silenced
+   globalMuted = false → sound effects and per-wheel voice re-enabled
+   This overrides everything — quick mute during gameplay.
+──────────────────────────────────────────────────────────────── */
+let globalMuted = false;
 
-  const btn = document.getElementById('narr-btn');
-  const states = {
-    female: { label: '👩 Female Voice', cls: 'narr-btn on female' },
-    male:   { label: '👨 Male Voice',   cls: 'narr-btn on male'   },
-    off:    { label: '🔇 Voice Off',    cls: 'narr-btn'            },
-  };
-  btn.textContent = states[voiceGender].label;
-  btn.className   = states[voiceGender].cls;
-
-  if (voiceGender !== 'off') {
-    speakAlways(voiceGender === 'female' ? 'Female voice is on' : 'Male voice is on');
+function toggleMute() {
+  globalMuted = !globalMuted;
+  const btn = document.getElementById('mute-btn');
+  if (globalMuted) {
+    btn.textContent = '🔇 Muted';
+    btn.className = 'mute-btn muted';
+    // Stop any currently playing spin sound immediately
+    stopSpinSound();
+    window.speechSynthesis && window.speechSynthesis.cancel();
+  } else {
+    btn.textContent = '🔊 Sound ON';
+    btn.className = 'mute-btn unmuted';
   }
 }
 
-function speakAlways(text) {
-  if (!text || !window.speechSynthesis || voiceGender === 'off') return;
+// Legacy stub — keep so any old calls don't crash
+function toggleNarration() { toggleMute(); }
+
+// speakWithGender: speaks with explicit gender ('female'|'male'), ignores global toggle
+function speakWithGender(text, gender) {
+  if (!text || !window.speechSynthesis || gender === 'off') return;
+  if (globalMuted) return; // master mute
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.volume = 1;
-
-  const voices = window.speechSynthesis.getVoices()
-    .filter(v => v.lang.startsWith('en'));
-
-  if (voiceGender === 'female') {
-    // Prefer known female voices
-    u.rate  = 0.92; u.pitch = 1.15;
-    const femaleNames = ['Samantha','Karen','Moira','Tessa','Victoria','Google UK English Female',
-                         'Microsoft Zira','Siri Female','Female'];
-    const pick = voices.find(v => femaleNames.some(n => v.name.includes(n)))
+  const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+  if (gender === 'female') {
+    u.rate=0.92; u.pitch=1.15;
+    const names = ['Samantha','Karen','Moira','Tessa','Victoria','Google UK English Female','Microsoft Zira','Siri Female'];
+    const pick = voices.find(v => names.some(n => v.name.includes(n)))
               || voices.find(v => v.name.toLowerCase().includes('female'))
-              || voices.find(v => v.gender === 'female')
               || voices[0];
     if (pick) u.voice = pick;
   } else {
-    // Male voice
-    u.rate  = 0.88; u.pitch = 0.82;
-    const maleNames = ['Daniel','Alex','Fred','Google UK English Male','Microsoft David',
-                       'Microsoft Mark','Siri Male','Male','Arthur','Oliver'];
-    const pick = voices.find(v => maleNames.some(n => v.name.includes(n)))
+    u.rate=0.88; u.pitch=0.82;
+    const names = ['Daniel','Alex','Fred','Google UK English Male','Microsoft David','Microsoft Mark','Arthur','Oliver'];
+    const pick = voices.find(v => names.some(n => v.name.includes(n)))
               || voices.find(v => v.name.toLowerCase().includes('male'))
-              || voices.find(v => v.gender === 'male')
               || voices[Math.min(1, voices.length-1)];
     if (pick) u.voice = pick;
   }
   window.speechSynthesis.speak(u);
+}
+
+// speakAlways: uses global voiceGender — for system announcements
+function speakAlways(text) {
+  if (!text || voiceGender === 'off') return;
+  speakWithGender(text, voiceGender);
 }
 
 function speak(text) {
@@ -1434,17 +1958,54 @@ window.addEventListener('resize',()=>{
   drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
 });
 
+/* ══ ELIMINATE SPIN BEFORE ══════════════════════════════════════
+   toggleEliminateSpinBefore — flips cfg.eliminateSpinBefore and
+   updates the checkbox row in-place without a full re-render.
+══════════════════════════════════════════════════════════════════ */
+function toggleEliminateSpinBefore(m, idx) {
+  const configs = getConfigs(m);
+  const cfg = configs[idx];
+  cfg.eliminateSpinBefore = !cfg.eliminateSpinBefore;
+
+  // Update checkbox in-place
+  const chk = document.getElementById('esb-chk-' + m + '-' + idx);
+  if (chk) chk.checked = cfg.eliminateSpinBefore;
+
+  // Update row style in-place
+  const row = document.getElementById('esb-row-' + m + '-' + idx);
+  const modeColor = m === 'teacher' ? 'var(--blue)' : 'var(--green)';
+  const modeBg    = m === 'teacher' ? 'var(--blue-l)' : 'var(--green-l)';
+  if (row) {
+    row.style.border      = '1.5px solid ' + (cfg.eliminateSpinBefore ? modeColor : 'var(--border)');
+    row.style.background  = cfg.eliminateSpinBefore ? modeBg : 'var(--bg)';
+    const label = row.querySelector('div > div:first-child');
+    if (label) label.style.color = cfg.eliminateSpinBefore ? modeColor : 'var(--text)';
+  }
+
+  // If eliminateSpinBefore is now OFF, clear any existing greyIndices from the active/queued wheel
+  if (!cfg.eliminateSpinBefore) {
+    if (activeWheel && activeWheel.configRef?.id === cfg.id) {
+      activeWheel.greyIndices = [];
+      activeWheel.greyIdx = -1;
+      redrawActive();
+    }
+    wheelQueue.forEach(w => {
+      if (w.configRef?.id === cfg.id) { w.greyIndices = []; w.greyIdx = -1; }
+    });
+  }
+}
+
 /* ══ INIT ════════════════════════════════════════════════════════ */
 function buildWheel(key,title,items,colors,startAngle=0){
   return{key,title,items:Array.isArray(items)?items:items.split('\n').map(s=>s.trim()).filter(Boolean),colors,angle:startAngle,spinning:false,greyIdx:-1,isLastWheel:false,configRef:null};
 }
 
 initWheelConfigs();
+updateScoreSettings();
 switchMode('teacher');
 // Load voices async
 if(window.speechSynthesis)window.speechSynthesis.onvoiceschanged=()=>{};
 </script>
-<!-- FAQ SECTION — SEO content at bottom of page -->
 <div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem">
   <div style="max-width:800px;margin:0 auto">
     <h2 style="font-family:var(--font);font-size:22px;font-weight:900;margin-bottom:6px;color:var(--text)">Frequently asked questions</h2>
