@@ -82,6 +82,21 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
   position:relative;width:100%;max-width:340px;
 }
 .wheel-outer canvas{width:100%;height:auto;display:block;border-radius:50%;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.12))}
+/* Center hub spin button overlay */
+.hub-spin-btn{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:13%;height:13%;min-width:32px;min-height:32px;
+  border-radius:50%;border:2.5px solid rgba(0,0,0,0.12);
+  background:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;line-height:1;
+  box-shadow:0 2px 8px rgba(0,0,0,0.18);
+  transition:transform 0.15s,box-shadow 0.15s,background 0.15s;
+  z-index:10;padding:0;
+}
+.hub-spin-btn:hover:not(:disabled){background:#f0f4ff;box-shadow:0 3px 12px rgba(21,101,192,0.25);transform:translate(-50%,-50%) scale(1.12)}
+.hub-spin-btn:active:not(:disabled){transform:translate(-50%,-50%) scale(0.95)}
+.hub-spin-btn:disabled{opacity:0.4;cursor:not-allowed}
 /* Pointer on right side pointing left */
 .wheel-outer::after{
   content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);
@@ -280,6 +295,7 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
       <input class="wheel-title-edit" id="active-wheel-title" value="📚 Wheel 1 — Topic">
       <div class="wheel-outer" id="wheel-outer-wrap">
         <canvas id="active-canvas" width="340" height="340"></canvas>
+        <button class="hub-spin-btn" id="hub-spin-btn" onclick="spinActive()" title="Spin the wheel">⟳</button>
       </div>
       <button class="spin-btn t" id="main-spin-btn" onclick="spinActive()">⟳ Spin</button>
       <div class="result-pill" id="main-result">Spin to begin</div>
@@ -293,14 +309,34 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 
   <div class="right-panel" id="right-panel">
     <div id="ctrl-teacher">
-      <div class="stat-row">
+      <div class="stat-row" style="grid-template-columns:repeat(4,1fr)">
         <div class="stat-box"><div class="stat-val" id="t-r">0</div><div class="stat-lbl">Rounds</div></div>
         <div class="stat-box"><div class="stat-val" id="t-c" style="color:#2E7D32">0</div><div class="stat-lbl">Correct</div></div>
         <div class="stat-box"><div class="stat-val" id="t-w" style="color:#C62828">0</div><div class="stat-lbl">Wrong</div></div>
+        <div class="stat-box"><div class="stat-val" id="t-p" style="color:#E65100">0</div><div class="stat-lbl">Punish</div></div>
       </div>
       <div class="ans-row">
         <button class="ans-btn ok" id="t-ok" onclick="tMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
         <button class="ans-btn no" id="t-no" onclick="tMark(false)" disabled>✗ Wrong<br><small>0 pts</small></button>
+      </div>
+      <!-- ── Score Setting Widget ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="text-align:center">
+          <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ Correct &nbsp;<span id="t-correct-badge">+10 pts</span></div>
+          <div style="display:flex;align-items:center;border:2px solid var(--blue);border-radius:10px;overflow:hidden;background:var(--card)">
+            <input id="t-score-correct" type="number" value="10" min="1" max="999"
+              oninput="updateScoreSettings()"
+              style="flex:1;border:none;outline:none;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:transparent;text-align:center;min-width:0">
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px">✗ Wrong &nbsp;<span id="t-wrong-badge">0 pts</span></div>
+          <div style="display:flex;align-items:center;border:2px solid var(--blue);border-radius:10px;overflow:hidden;background:var(--card)">
+            <input id="t-score-wrong" type="number" value="0" min="-999" max="999"
+              oninput="updateScoreSettings()"
+              style="flex:1;border:none;outline:none;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:transparent;text-align:center;min-width:0">
+          </div>
+        </div>
       </div>
       <div class="scoreboard">
         <div class="sb-title">🏆 Scoreboard</div>
@@ -313,26 +349,8 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
           <label>Class name</label>
           <input id="t-cn" type="text" value="Math Grade 5 — Class 3A">
         </div>
-        <div class="setup-panel" style="background:var(--bg);border:1px solid var(--border);margin-bottom:12px">
-          <h4 style="margin:0 0 10px 0">🎯 Score Setting</h4>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div class="setup-group" style="margin-bottom:0">
-              <label>Correct answer points</label>
-              <input id="t-score-correct" type="number" value="10" min="1" max="100"
-                oninput="updateScoreSettings()">
-            </div>
-            <div class="setup-group" style="margin-bottom:0">
-              <label>Wrong answer points</label>
-              <input id="t-score-wrong" type="number" value="0" min="0" max="100"
-                oninput="updateScoreSettings()">
-            </div>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-top:6px">
-            Preview: <span style="font-weight:700">✓ +<span id="t-preview-correct">10</span></span> pts | <span style="font-weight:700">✗ <span id="t-preview-wrong">0</span></span> pts
-          </div>
-        </div>
+
         <div id="t-wheel-configs"></div>
-        <button class="add-wheel-btn" onclick="addWheelConfig('teacher')">＋ Add another wheel</button>
         <button class="start-btn t" onclick="startTeacher()">💾 Save settings &amp; start</button>
       </div>
     </div>
@@ -355,7 +373,6 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
       <div class="setup-panel">
         <h4>⚙️ Game setup</h4>
         <div id="s-wheel-configs"></div>
-        <button class="add-wheel-btn" onclick="addWheelConfig('student')">＋ Add another wheel</button>
         <button class="start-btn s" onclick="startStudent()">💾 Save settings &amp; start</button>
       </div>
     </div>
@@ -400,7 +417,7 @@ let activeWheel=null; // {items,colors,angle,spinning,greyIdx,key,title}
 let wheelQueue=[]; // wheels waiting to spin next
 let archivedWheels=[]; // spun wheels
 let scores={},punishCt={},topicS={},scoreboardNames=new Set();
-let rounds=0,correct=0,wrongs=0,punishments=0;
+let rounds=0,correct=0,wrongs=0,punishments=0,teacherPunishments=0;
 let curTopic=null,curGroup=null,curAsker=null,curAnswerer=null;
 let sessionLog=[];
 let narrationOn=true; // legacy — mirrors voiceGender!=='off'
@@ -546,7 +563,7 @@ function drumThru(vol,dest){
 }
 
 /* ══ WHEEL DRAWING ══════════════════════════════════════════════ */
-function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[]){
+function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[],isPunishment=false){
   if(!canvas)return;
   const sz=canvas.width,ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,sz,sz);
@@ -689,7 +706,39 @@ function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[]){
     const colonIdx=raw.indexOf(':');
     const displayRaw=colonIdx>0?raw.slice(0,colonIdx).trim():raw;
     const lbl=wheelDisplayLabel(raw,mc);
-    ctx.fillText(lbl,r-12,fs*0.37);
+
+    if(isPunishment){
+      // Auto-shrink and wrap text for punishment wheel long labels
+      const maxW=r*0.72; // max pixel width available along the radius
+      let drawFs=fs;
+      // Step 1: shrink font until full label fits on one line (min 8px)
+      ctx.font=`800 ${drawFs}px 'Nunito',Arial,sans-serif`;
+      while(drawFs>8&&ctx.measureText(raw).width>maxW){
+        drawFs--;
+        ctx.font=`800 ${drawFs}px 'Nunito',Arial,sans-serif`;
+      }
+      // Step 2: if still too wide, split into two lines at a word boundary
+      if(ctx.measureText(raw).width>maxW){
+        const words=raw.split(' ');
+        let line1=words[0],line2=words.slice(1).join(' ');
+        // Find best split point
+        for(let w=1;w<words.length-1;w++){
+          const try1=words.slice(0,w+1).join(' ');
+          const try2=words.slice(w+1).join(' ');
+          if(Math.max(ctx.measureText(try1).width,ctx.measureText(try2).width)<
+             Math.max(ctx.measureText(line1).width,ctx.measureText(line2).width)){
+            line1=try1;line2=try2;
+          }
+        }
+        const lineH=drawFs*1.15;
+        ctx.fillText(line1,r-12,-lineH*0.4);
+        ctx.fillText(line2,r-12, lineH*0.7);
+      } else {
+        ctx.fillText(raw,r-12,drawFs*0.37);
+      }
+    } else {
+      ctx.fillText(lbl,r-12,fs*0.37);
+    }
     ctx.restore();
   }
 
@@ -770,7 +819,7 @@ function getWheelStartAngle(cfg,queueIndex,itemCount){
 function redrawActive(){
   if(!activeWheel)return;
   const c=document.getElementById('active-canvas');
-  if(c)drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[]);
+  if(c)drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[],activeWheel.isPunishment||false);
 }
 
 /* ══ WHEEL QUEUE SYSTEM ════════════════════════════════════════
@@ -809,11 +858,13 @@ function syncActiveToDOM(){
   const c=document.getElementById('active-canvas');
   const sz=c.parentElement.clientWidth||340;
   c.width=sz;c.height=sz;
-  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[]);
+  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[],activeWheel.isPunishment||false);
   const btn=document.getElementById('main-spin-btn');
   btn.disabled=false;
   btn.textContent='⟳ Spin '+(activeWheel.title||'wheel');
   btn.className='spin-btn '+(mode==='teacher'?'t':activeWheel.key==='s3'?'p':'s');
+  const hub=document.getElementById('hub-spin-btn');
+  if(hub){hub.disabled=false;hub.textContent='⟳';}
   if(mode==='teacher'&&teacherQuizEnded)setTeacherQuizCompleteUI();
   const rp=document.getElementById('main-result');
   if(rp){rp.textContent='—';rp.classList.remove('flash');}
@@ -854,22 +905,30 @@ function isTeacherQuizComplete(){
 }
 function setTeacherQuizCompleteUI(){
   const btn=document.getElementById('main-spin-btn');
-  if(btn){
-    btn.disabled=true;
-    btn.textContent='✓ All questions asked';
-    btn.className='spin-btn t';
-  }
+  if(btn){btn.disabled=true;btn.textContent='✓ All questions asked';btn.className='spin-btn t';}
+  const hub=document.getElementById('hub-spin-btn');
+  if(hub){hub.disabled=true;hub.textContent='✓';}
 }
 
 function spinActive(){
   if(teacherQuizEnded)return;
   if(!activeWheel||activeWheel.spinning)return;
+  // Auto-initialise scores on first spin if user hasn't pressed Save yet
+  if(scoreboardNames.size===0){
+    if(mode==='teacher') startTeacher();
+    else startStudent();
+    // startTeacher/startStudent calls loadNextWheel which replaces activeWheel — abort this spin
+    // so the newly-loaded wheel gets spun cleanly on the user's next click
+    return;
+  }
   try{getCtx().resume();}catch(e){}
   
   // Switch to this wheel's assigned sound
   if (activeWheel.soundKey) currentSound = activeWheel.soundKey;
   activeWheel.spinning=true;
   document.getElementById('main-spin-btn').disabled=true;
+  const _hub=document.getElementById('hub-spin-btn');
+  if(_hub)_hub.disabled=true;
   
   // ----------------------------------------------------
   // FIX: Pre-calculate the exact winning wedge to avoid visual snapping
@@ -907,7 +966,7 @@ function spinActive(){
   function frame(now){
     const pct=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-pct,4);
     activeWheel.angle=a0+totalRot*ease;
-    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[]);
+    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[],activeWheel.isPunishment||false);
     
     if(pct<1){requestAnimationFrame(frame);return;}
     
@@ -918,7 +977,7 @@ function spinActive(){
     let idx=resolveGreySkip(activeWheel,greySet);
     rotateWheelToSegment(activeWheel,idx);
     saveWheelAngle(activeWheel);
-    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[]);
+    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[],activeWheel.isPunishment||false);
     
     // Re-read index post-snap
     const snapIdx=getWinnerIndexFromWheel(activeWheel);
@@ -987,6 +1046,7 @@ const T_DEFAULTS = [
 { title:'❓ Teacher Wheel 1 — Questions', items:'Question 1: Which animal says “meow”? a) Dog. b) Cat. c) Cow. d) Duck.\nQuestion 2: Which animal is known for having a long trunk? a) Lion. b) Elephant. c) Monkey. d) Rabbit.\nQuestion 3: Which animal can fly in the sky? a) Fish. b) Tiger. c) Bird. d) Horse.\nQuestion 4: Which animal lives in water and has fins? a) Fish. b) Bear. c) Zebra. d) Kangaroo.\nQuestion 5: Which animal is very tall with a long neck? a) Giraffe. b) Panda. c) Dog. d) Goat.\nQuestion 6: Which animal likes to eat bamboo? a) Panda. b) Lion. c) Crocodile. d) Fox.\nQuestion 7: Which animal says “woof”? a) Cat. b) Duck. c) Dog. d) Cow.\nQuestion 8: Which animal hops and carries babies in a pouch? a) Kangaroo. b) Tiger. c) Sheep. d) Camel.\nQuestion 9: Which animal is called the king of the jungle? a) Rabbit. b) Lion. c) Deer. d) Pig.\nQuestion 10: Which animal has black and white stripes? a) Zebra. b) Panda. c) Rhino. d) Camel.', paletteIdx:0, soundKey:'kalimba', narration:'Please answer', wheelVoice:'female', enabled:true, askedQuestions:new Set(), eliminateSpinBefore:true },
 
   { title:'👥 Wheel 2 — Students', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true },
+  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
 ];
 const S_DEFAULTS = [
   { title:'❓ Wheel 1 — Askers',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', wheelVoice:'female', enabled:true, eliminateSpinBefore:true },
@@ -1146,10 +1206,7 @@ function renderWheelConfigs(m) {
               ${cfg.wheelVoice==='female' ? '👩 Female' : cfg.wheelVoice==='male' ? '👨 Male' : '🔇 Off'}
             </button>
           </div>
-          ${canDelete
-            ? `<button onclick="deleteWheelConfig('${m}',${idx})"
-                style="padding:3px 10px;border-radius:6px;border:1px solid var(--red-l);background:var(--red-l);color:var(--red);font-size:11px;font-weight:700;cursor:pointer">🗑 Remove</button>`
-            : '<span style="font-size:10px;color:var(--muted)">Min 1 wheel</span>'}
+          <span></span>
         </div>
       </div>`;
     container.appendChild(div);
@@ -1375,9 +1432,9 @@ function buildQueueFromConfigs(m, includePunishment=false) {
   const configs = getConfigs(m);
   const enabled = configs.filter(c => c.enabled);
   if (enabled.length === 0) return [];
-  // For student mode, exclude punishment wheels from the main round queue
-  // They are added dynamically by sMark(false) only when answer is wrong
-  const filtered = (m === 'student' && !includePunishment)
+  // For student AND teacher mode, exclude punishment wheels from the main round queue.
+  // They are added dynamically on wrong answer only when enabled.
+  const filtered = (!includePunishment)
     ? enabled.filter(c => !isPunishWheel(c))
     : enabled;
   if (filtered.length === 0) return [];
@@ -1404,8 +1461,10 @@ function buildQueueFromConfigs(m, includePunishment=false) {
   });
 }
 
-function getPunishWheelFromConfigs() {
-  const configs = studentWheelConfigs.filter(c => c.enabled && isPunishWheel(c));
+function getPunishWheelFromConfigs(m) {
+  // Support both teacher and student punishment wheels
+  const sourceConfigs = (m === 'teacher') ? teacherWheelConfigs : studentWheelConfigs;
+  const configs = sourceConfigs.filter(c => c.enabled && isPunishWheel(c));
   if (!configs.length) return null;
   const cfg = configs[0];
   const items = cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
@@ -1416,6 +1475,13 @@ function getPunishWheelFromConfigs() {
   w.narration   = cfg.narration   || '';
   w.wheelVoice  = cfg.wheelVoice  || 'female';
   w.isLastWheel = true;
+  w.isPunishment = true; // flag for text shrink rendering
+  // Apply eliminateSpinBefore history — grey out previously picked punishments
+  if (cfg.eliminateSpinBefore !== false && cfg.pickedItems && cfg.pickedItems.size > 0) {
+    const greyIndices = [];
+    items.forEach((item, idx) => { if (cfg.pickedItems.has(item)) greyIndices.push(idx); });
+    if (greyIndices.length > 0) w.greyIndices = greyIndices;
+  }
   return w;
 }
 
@@ -1425,16 +1491,18 @@ function updateScoreSettings() {
   const wrongInput = document.getElementById('t-score-wrong');
   if (!correctInput || !wrongInput) return;
 
-  scoreCorrect = parseInt(correctInput.value) || 10;
-  scoreWrong = parseInt(wrongInput.value) || 0;
+  scoreCorrect = parseInt(correctInput.value);
+  if (isNaN(scoreCorrect) || scoreCorrect < 1) scoreCorrect = 10;
+  scoreWrong = parseInt(wrongInput.value);
+  if (isNaN(scoreWrong)) scoreWrong = 0;
 
-  // Update preview
-  const correctPreview = document.getElementById('t-preview-correct');
-  const wrongPreview = document.getElementById('t-preview-wrong');
-  if (correctPreview) correctPreview.textContent = scoreCorrect;
-  if (wrongPreview) wrongPreview.textContent = scoreWrong;
+  // Update badge labels next to the headings
+  const cb = document.getElementById('t-correct-badge');
+  const wb = document.getElementById('t-wrong-badge');
+  if (cb) cb.textContent = `+${scoreCorrect} pts`;
+  if (wb) wb.textContent = `${scoreWrong} pts`;
 
-  // Update button labels in real-time
+  // Update Correct/Wrong answer button labels in real-time
   const okBtn = document.getElementById('t-ok');
   const noBtn = document.getElementById('t-no');
   if (okBtn) okBtn.innerHTML = `✓ Correct<br><small>+${scoreCorrect} pts</small>`;
@@ -1443,18 +1511,30 @@ function updateScoreSettings() {
 
 /* ══ START GAMES (rewritten to use configs) ══════════════════ */
 function startTeacher() {
+  // Clear ALL elimination history BEFORE building the queue so wheels load with no grey segments
+  if(teacherWheelConfigs[0])teacherWheelConfigs[0].askedQuestions=new Set();
+  teacherWheelConfigs.forEach(cfg => { cfg.pickedItems = new Set(); });
+  studentWheelConfigs.forEach(cfg => { cfg.pickedItems = new Set(); });
   const queue = buildQueueFromConfigs('teacher');
   if (queue.length === 0) { alert('Enable at least 1 wheel.'); return; }
   for (const w of queue) {
     if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
   }
-  scores={}; topicS={}; scoreboardNames=new Set(); rounds=correct=wrongs=0; sessionLog=[]; archivedWheels=[];
+  scores={}; topicS={}; scoreboardNames=new Set(); rounds=correct=wrongs=0; teacherPunishments=0; sessionLog=[]; archivedWheels=[];
   Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
   teacherQuizEnded=false;
-  if(teacherWheelConfigs[0])teacherWheelConfigs[0].askedQuestions=new Set();
-  // Reset pickedItems on all configs so elimination history starts fresh each game
-  teacherWheelConfigs.forEach(cfg => cfg.pickedItems = new Set());
-  studentWheelConfigs.forEach(cfg => cfg.pickedItems = new Set());
+  curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
+  pendingAdvanceWheel=false;
+  // Reset visible stat counters
+  document.getElementById('t-r').textContent='0';
+  document.getElementById('t-c').textContent='0';
+  document.getElementById('t-w').textContent='0';
+  document.getElementById('t-p').textContent='0';
+  // Reset answer buttons and result pill
+  ['t-ok','t-no'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
+  const _rp=document.getElementById('main-result');if(_rp){_rp.textContent='Spin to begin';_rp.classList.remove('flash');}
+  const _sb=document.getElementById('main-spin-btn');if(_sb){_sb.disabled=false;_sb.textContent='⟳ Spin';}
+  const _hb=document.getElementById('hub-spin-btn');if(_hb){_hb.disabled=false;_hb.textContent='⟳';}
   // Only the LAST wheel's items go on the scoreboard (groups/answerers)
   const lastW = queue[queue.length-1];
   lastW.items.forEach(item => { scores[item]=0; scoreboardNames.add(item); });
@@ -1463,6 +1543,7 @@ function startTeacher() {
   clearArchive();
   // Tag last wheel
   queue[queue.length-1].isLastWheel = true;
+  activeWheel=null; // force fresh load with no animation stale state
   wheelQueue = queue;
   loadNextWheel(false);
   updateTSB();
@@ -1470,6 +1551,9 @@ function startTeacher() {
 }
 
 function startStudent() {
+  // Clear ALL elimination history BEFORE building the queue so wheels load with no grey segments
+  studentWheelConfigs.forEach(cfg => { cfg.pickedItems = new Set(); });
+  teacherWheelConfigs.forEach(cfg => { cfg.pickedItems = new Set(); });
   const queue = buildQueueFromConfigs('student');
   if (queue.length === 0) { alert('Enable at least 1 wheel.'); return; }
   for (const w of queue) {
@@ -1477,6 +1561,17 @@ function startStudent() {
   }
   scores={}; punishCt={}; scoreboardNames=new Set(); rounds=correct=wrongs=punishments=0; sessionLog=[]; archivedWheels=[];
   Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
+  curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
+  pendingAdvanceWheel=false;
+  // Reset visible stat counters
+  document.getElementById('s-r').textContent='0';
+  document.getElementById('s-c').textContent='0';
+  document.getElementById('s-p').textContent='0';
+  // Reset answer buttons and result pill
+  ['s-ok','s-no'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
+  const _rp2=document.getElementById('main-result');if(_rp2){_rp2.textContent='Spin to begin';_rp2.classList.remove('flash');}
+  const _sb2=document.getElementById('main-spin-btn');if(_sb2){_sb2.disabled=false;_sb2.textContent='⟳ Spin';}
+  const _hb2=document.getElementById('hub-spin-btn');if(_hb2){_hb2.disabled=false;_hb2.textContent='⟳';}
   // Collect ALL player names across non-punishment wheels for scoring
   queue.forEach((w,wi) => {
     const isPunish = (w.title||'').toLowerCase().includes('punish') || w.title.includes('😂');
@@ -1490,6 +1585,7 @@ function startStudent() {
   });
   clearArchive();
   queue[queue.length-1].isLastWheel = true;
+  activeWheel=null; // force fresh load with no animation stale state
   wheelQueue = queue;
   loadNextWheel(false);
   updateSSB();
@@ -1542,12 +1638,30 @@ function onWheelResult(key, winner) {
 
   if (isLast) {
     if (mode === 'teacher') {
-      // Teacher: all wheels done, enable correct/wrong
-      showOv('🎯', 'Ready to answer!', allResults + '\n\nMark the answer above ↑', 'info');
-      document.getElementById('t-ok').disabled = false;
-      document.getElementById('t-no').disabled = false;
-      document.getElementById('main-spin-btn').disabled = true;
-      document.getElementById('main-spin-btn').textContent = 'Mark answer ↑';
+      // Check if this final wheel IS the teacher punishment wheel
+      const isPunishment = isPunishWheel(activeWheel);
+      if (isPunishment) {
+        // Teacher punishment spin resolved — increment counter and continue to next round
+        teacherPunishments++;
+        const tpEl = document.getElementById('t-p');
+        if (tpEl) tpEl.textContent = teacherPunishments;
+        // The punished student is curGroup (last Wheel 2 result before punishment)
+        const punishedName = curGroup || '—';
+        playPunishSound();
+        showOv('😂', punishedName + ' gets punished!', winner + '\n\nPress Continue to spin next question.', 'punish');
+        updateTSB();
+        resetRound();
+        // Queue next round
+        const q = buildQueueFromConfigs('teacher');
+        if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
+      } else {
+        // Normal teacher last wheel — enable correct/wrong
+        showOv('🎯', 'Ready to answer!', allResults + '\n\nMark the answer above ↑', 'info');
+        document.getElementById('t-ok').disabled = false;
+        document.getElementById('t-no').disabled = false;
+        document.getElementById('main-spin-btn').disabled = true;
+        document.getElementById('main-spin-btn').textContent = 'Mark answer ↑';
+      }
 
     } else {
       // Student mode — check if this final wheel IS the punishment wheel
@@ -1604,13 +1718,14 @@ function tMark(ok) {
     if (scores[group]!==undefined) scores[group]=(scores[group]||0)+scoreCorrect;
     topicS[topic].c++;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Correct',points:scoreCorrect});
-    if(!quizDone){playWinSound();launchConfetti();showOv('🎉', `${group} correct!`, `+${scoreCorrect} points! 🏆`, 'win');}
+    if(!quizDone){playWinSound();launchConfetti();}
     else playWinSound();
   } else {
     wrongs++; document.getElementById('t-w').textContent=wrongs;
+    if (scores[group]!==undefined) scores[group]=(scores[group]||0)+scoreWrong;
     topicS[topic].w++;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Wrong',points:scoreWrong});
-    if(!quizDone){playLoseSound();showOv('😢','Incorrect!',`${group} — ${scoreWrong} points this round`,'lose');}
+    if(!quizDone){playLoseSound();}
     else playLoseSound();
   }
   updateTSB();
@@ -1625,6 +1740,21 @@ function tMark(ok) {
     setTeacherQuizCompleteUI();
     showOv('🎯','Quiz Ended!','View or Download Scoreboard\nShare your result','info');
     return;
+  }
+  // If wrong answer AND teacher punishment wheel is enabled, queue it first
+  if (!ok) {
+    const pw = getPunishWheelFromConfigs('teacher');
+    if (pw) {
+      wheelQueue = [pw];
+      showOv('😢',`${group} got it wrong!`,`Spin the punishment wheel! 👇`, 'lose');
+      loadNextWheel(true);
+      return;
+    }
+    // No punishment wheel — show incorrect overlay then continue
+    showOv('😢','Incorrect!',`${group} — ${scoreWrong > 0 ? '+' : ''}${scoreWrong} points this round`,'lose');
+  } else {
+    showOv('🎉', `${group} correct!`, `+${scoreCorrect} points! 🏆`, 'win');
+    launchConfetti();
   }
   resetRound();
   // Queue next round
@@ -1653,7 +1783,7 @@ function sMark(ok) {
     document.getElementById('s-ok').disabled=true;
     document.getElementById('s-no').disabled=true;
     // Try to find a punishment wheel to queue
-    const pw = getPunishWheelFromConfigs();
+    const pw = getPunishWheelFromConfigs('student');
     if (pw) {
       wheelQueue = [pw];
       showOv('😢',`${answerer} got it wrong!`,`Spin the punishment wheel! 👇\n🎤 ${asker} will get +5!`,'lose');
@@ -1678,6 +1808,8 @@ function resetRound() {
   });
   const btn=document.getElementById('main-spin-btn');
   if(btn&&!teacherQuizEnded){ btn.disabled=false; btn.textContent='⟳ Spin'; }
+  const hub=document.getElementById('hub-spin-btn');
+  if(hub&&!teacherQuizEnded){ hub.disabled=false; hub.textContent='⟳'; }
 }
 
 /* ══ QUEUE + LEGACY stubs (kept for switchMode) ════════════ */
@@ -1751,7 +1883,7 @@ function switchMode(m){
   archivedWheels=[];wheelQueue=[];activeWheel=null;
   curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
   scores={};punishCt={};topicS={};scoreboardNames=new Set();
-  rounds=correct=wrongs=punishments=0;
+  rounds=correct=wrongs=punishments=teacherPunishments=0;
   clearArchive();
   document.getElementById('main-spin-btn').disabled=false;
   document.getElementById('main-spin-btn').textContent='⟳ Spin';
@@ -1955,7 +2087,7 @@ window.addEventListener('resize',()=>{
   const c=document.getElementById('active-canvas');
   if(!c||!activeWheel)return;
   const sz=c.parentElement.clientWidth||340;c.width=sz;c.height=sz;
-  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx);
+  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,[],activeWheel.isPunishment||false);
 });
 
 /* ══ ELIMINATE SPIN BEFORE ══════════════════════════════════════
