@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — WheelQuiz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+
+    /* ── VARIABLES ── */
+    :root {
+      --blue:    #1565C0;
+      --blue-l:  #E8F1FB;
+      --green:   #2E7D32;
+      --bg:      #F4F6FB;
+      --card:    #FFFFFF;
+      --border:  #E4E7EF;
+      --text:    #1A1D2E;
+      --muted:   #6B7280;
+      --font:    'Nunito', sans-serif;
+      --fontb:   'Nunito Sans', sans-serif;
+    }
+
+    /* ── RESET ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--fontb);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.7;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    @media (min-width: 768px) {
+      .topbar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+      }
+      .logo      { grid-column: 2; }
+      .back-link { grid-column: 3; justify-self: end; margin-left: 0; }
+    }
+    .logo {
+      font-family: var(--font);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--blue);
+      letter-spacing: -0.5px;
+      text-decoration: none;
+    }
+    .logo span { color: var(--green); }
+    .back-link {
+      margin-left: auto;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      transition: all 0.15s;
+    }
+    .back-link:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--blue-l);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: var(--font);
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h2 {
+      font-family: var(--font);
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 2rem 0 0.6rem;
+    }
+    p {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+    ul {
+      padding-left: 1.4rem;
+      margin-bottom: 0.85rem;
+    }
+    li {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .highlight {
+      background: #F3F4F6;       /* A clean, soft light gray */
+      border: 1px solid #E5E7EB;  /* A muted, professional gray border */
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      font-size: 13px;
+     color: #374151;            /* Dark charcoal text instead of harsh black */
+      letter-spacing: 0.03em;
+     line-height: 1.6;
+    }
+
+    /* ── FOOTER ── */
+    .footer-legal {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .footer-legal a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0 8px;
+    }
+    .footer-legal a:hover { color: var(--blue); }
+
+  </style>
+</head>
+<body>
+
+  <nav class="topbar">
+    <a class="logo" href="index.html">Wheel<span>Quiz</span></a>
+    <a class="back-link" href="index.html">← Back to App</a>
+  </nav>
+
+  <div class="content">
+
+    <div class="badge">Legal</div>
+    <h1>Terms of Service</h1>
+    <p class="meta">Effective date: 1 January 2025 &nbsp;·&nbsp; Last updated: May 2026</p>
+
+    <div class="card">
+      <p>
+        Please read these Terms of Service ("Terms") carefully before using WheelQuiz at
+        <strong>wheelquiz.com</strong> (the "Service"). By accessing or using the Service,
+        you agree to be bound by these Terms. If you do not agree, please do not use the Service.
+      </p>
+    </div>
+
+    <h2>1. Description of the Service</h2>
+    <p>
+      WheelQuiz is a free, browser-based interactive spin-wheel quiz game designed for
+      educational, classroom, and casual recreational use. It serves a mixed audience, including teachers, students, gamers, and individuals of all ages. No account, registration, login, or payment is required to access or play the game.
+    </p>
+
+    <h2>2. Eligibility and Supervision</h2>
+    <p>
+      The Service is open globally to all users. Because WheelQuiz features highly interactive customization options suitable for educational groups, users under the age of 13 should play the game under the active guidance or supervision of a teacher, parent, or legal guardian. By interacting with the platform, you represent that your usage complies fully with your local district or regional internet guidelines.
+    </p>
+
+    <h2>3. Acceptable Use</h2>
+    <p>You agree to use the Service only for lawful, playful, and educational purposes. You must not:</p>
+    <ul>
+      <li>Use the customization features of the wheel to type, transmit, or display text that is genuinely harmful, abusive, harassing, defamatory, or promoting real-world violence. (Playful, safe classroom competition mechanics—such as gaming forfeits, friendly challenges, or game elimination modes—are fully acceptable).</li>
+      <li>Attempt to interfere with, disrupt, hack, or compromise the stability of the Service's web assets or network infrastructure.</li>
+      <li>Reverse-engineer, decompile, crawl, scrape, or systematically copy any proprietary core components of the spin-wheel engine or application source code for commercial distribution.</li>
+      <li>Deploy unauthorized automated web bots or scripts to query the Service in an aggressive layout inconsistent with standard human gameplay.</li>
+    </ul>
+
+    <h2>4. Intellectual Property</h2>
+    <p>
+      All source code, underlying application frameworks, structural interface design, graphic layouts, animations, audio assets, custom branding elements, and logos associated with WheelQuiz are the exclusive intellectual property of WheelQuiz and remain protected under global copyright and trademark frameworks.
+    </p>
+    <p>
+      You are granted a limited, non-exclusive, non-transferable, and revocable license to access and play WheelQuiz for personal, household, or classroom group setups. This license strictly prohibits repackaging, white-labeling, or selling our application framework as an independent commercial product without explicit written consent.
+    </p>
+
+    <h2>5. User-Generated Content</h2>
+    <p>
+      WheelQuiz allows you to inputs custom strings—such as trivia questions, point values, player names, or custom lists—into the local browser state. This data is processed strictly within the transient memory of your active web browser tab and is never synced, logged, or recorded on our servers. You maintain total, uncompromised ownership of your lists. You are entirely responsible for verifying that your inputted labels do not infringe upon any third-party trademark or intellectual property rights.
+    </p>
+
+    <h2>6. Third-Party Services and Advertising</h2>
+    <p>
+      WheelQuiz relies on third-party advertisement delivery networks to remain a free utility for all global players. We explicitly comply with privacy standards by managing ad delivery based on target demographics—ensuring child-safe, non-personalized contextual ads are deployed where appropriate, while allowing standard personalized ad models to operate under applicable adult user consent profiles. We do not directly manage, curate, or evaluate the independent content practices of separate external third-party advertisers.
+    </p>
+
+    <h2>7. Disclaimer of Warranties</h2>
+    <div class="highlight">
+      THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY
+      KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED,
+      ERROR-FREE, OR FREE OF VIRUSES OR OTHER HARMFUL COMPONENTS. YOUR USE OF THE SERVICE IS AT
+      YOUR OWN RISK.
+    </div>
+
+    <h2>8. Limitation of Liability</h2>
+    <p>
+      To the fullest extent permitted by applicable law, WheelQuiz and its operators shall not
+      be liable for any indirect, incidental, special, consequential, or punitive damages arising
+      from your use of, or inability to use, the Service — even if we have been advised of the
+      possibility of such damages. Our total liability to you for any claim arising from these
+      Terms or your use of the Service shall not exceed the amount you paid us in the twelve
+      months preceding the claim (which, given the Service is completely free, shall be zero).
+    </p>
+
+    <h2>9. Modifications to the Service and Terms</h2>
+    <p>
+      We reserve the right to modify, optimize, suspend, or temporarily discontinue parts of the free Service at any time without prior notice. We may also adapt these Terms occasionally to reflect changing web regulations. Any shifts will be highlighted clearly on this page with an adjusted revision date. Continued engagement with WheelQuiz confirms your acceptance of the updated framework.
+    </p>
+
+    <h2>10. Governing Law</h2>
+    <p>
+      These Terms shall be governed by and construed in accordance with applicable law. Any
+      disputes arising under these Terms shall be subject to the exclusive jurisdiction of the
+      competent courts in the jurisdiction where WheelQuiz is operated.
+    </p>
+  </div><footer class="footer-legal">
+    <span>© <script>document.write(new Date().getFullYear())</script> WheelQuiz. All rights reserved.</span>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="terms.html">Terms of Service</a>
+    <a href="copyright.html">Copyright</a>
+    <a href="contact.html">Contact Us</a>
+  </footer>
+
+</body>
+</html>
