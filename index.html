@@ -1189,15 +1189,15 @@ let teacherWheelConfigs = [];
 let studentWheelConfigs = [];
 
 const T_DEFAULTS = [
-{ title:'❓ Teacher Wheel 1 — Questions', items:'Question 1: Which animal says “meow”? a) Dog. b) Cat. c) Cow. d) Duck.\nQuestion 2: Which animal is known for having a long trunk? a) Lion. b) Elephant. c) Monkey. d) Rabbit.\nQuestion 3: Which animal can fly in the sky? a) Fish. b) Tiger. c) Bird. d) Horse.\nQuestion 4: Which animal lives in water and has fins? a) Fish. b) Bear. c) Zebra. d) Kangaroo.\nQuestion 5: Which animal is very tall with a long neck? a) Giraffe. b) Panda. c) Dog. d) Goat.\nQuestion 6: Which animal likes to eat bamboo? a) Panda. b) Lion. c) Crocodile. d) Fox.\nQuestion 7: Which animal says “woof”? a) Cat. b) Duck. c) Dog. d) Cow.\nQuestion 8: Which animal hops and carries babies in a pouch? a) Kangaroo. b) Tiger. c) Sheep. d) Camel.\nQuestion 9: Which animal is called the king of the jungle? a) Rabbit. b) Lion. c) Deer. d) Pig.\nQuestion 10: Which animal has black and white stripes? a) Zebra. b) Panda. c) Rhino. d) Camel.', paletteIdx:0, soundKey:'kalimba', narration:'Please answer', wheelVoice:'female', enabled:true, askedQuestions:new Set(), eliminateSpinBefore:true },
+{ title:'❓ Teacher Questions', items:'Question 1: Which animal says “meow”? a) Dog. b) Cat. c) Cow. d) Duck.\nQuestion 2: Which animal is known for having a long trunk? a) Lion. b) Elephant. c) Monkey. d) Rabbit.\nQuestion 3: Which animal can fly in the sky? a) Fish. b) Tiger. c) Bird. d) Horse.\nQuestion 4: Which animal lives in water and has fins? a) Fish. b) Bear. c) Zebra. d) Kangaroo.\nQuestion 5: Which animal is very tall with a long neck? a) Giraffe. b) Panda. c) Dog. d) Goat.\nQuestion 6: Which animal likes to eat bamboo? a) Panda. b) Lion. c) Crocodile. d) Fox.\nQuestion 7: Which animal says “woof”? a) Cat. b) Duck. c) Dog. d) Cow.\nQuestion 8: Which animal hops and carries babies in a pouch? a) Kangaroo. b) Tiger. c) Sheep. d) Camel.\nQuestion 9: Which animal is called the king of the jungle? a) Rabbit. b) Lion. c) Deer. d) Pig.\nQuestion 10: Which animal has black and white stripes? a) Zebra. b) Panda. c) Rhino. d) Camel.', paletteIdx:0, soundKey:'kalimba', narration:'Please answer', wheelVoice:'female', enabled:true, askedQuestions:new Set(), eliminateSpinBefore:true },
 
-  { title:'👥 Wheel 2 — Students', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true },
-  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
+  { title:'👥 Student Answer', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true },
+  { title:'😂 Student Punishments', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
 ];
 const S_DEFAULTS = [
   { title:'🔵 Wheel 1 — Team A',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
   { title:'🔴 Wheel 2 — Team B',      items:'Alex\nMia\nNoah\nEmma\nLiam', paletteIdx:1, soundKey:'chime',   narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
-  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — on by default
+  { title:'😂 Wheel 3 — Punishments', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — on by default
 ];
 function initWheelConfigs() {
   const prevLms = studentWheelConfigs.lastManStanding; //last man standing
@@ -1951,7 +1951,7 @@ function onWheelResult(key, winner) {
         curAnswerer = answererName;
         const lmsHint = lmsActive ? `\n⚔️ Last Student Standing — ${lmsGetActivePlayers().length} players left` : ''; //last man standing
         const tvvHint = tvvActive ? `\n⚔️ Team vs Team — Round ${tvvRoundNum}: ${tvvTeamDisplay(curAskerTeamIdx)} asks, ${tvvTeamDisplay(curAnswererTeamIdx)} answers` : ''; //team vs team
-        showOv('🙋', askerName + ' → ' + answererName,
+        showOv('🙋', askerName + ' VS ' + answererName,
           askerName + ' asks a question!\n' + answererName + ' must answer!\n\nMark result above ↑' + lmsHint + tvvHint, 'info');
         if(lmsActive)updateLMSStatusPanel(askerName,answererName); //last man standing
         if(tvvActive)updateTVVStatusPanel(askerName,answererName); //team vs team
@@ -1969,7 +1969,7 @@ function onWheelResult(key, winner) {
   } else {
     // More wheels — show result on the snapped wheel; advance stage after Continue
     const nextTitle = wheelQueue[0]?.title || 'next wheel';
-    showOv('🎯', wTitle, 'Result: ' + winner + '\n\nNext: ' + nextTitle, 'info');
+    showOv('🎯', wTitle, '' + winner + '\n\nNext: ' + nextTitle, 'info');
     pendingAdvanceWheel=true;
   }
 }
