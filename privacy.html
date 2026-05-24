@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — WheelQuiz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+
+    /* ── VARIABLES ── */
+    :root {
+      --blue:    #1565C0;
+      --blue-l:  #E8F1FB;
+      --green:   #2E7D32;
+      --bg:      #F4F6FB;
+      --card:    #FFFFFF;
+      --border:  #E4E7EF;
+      --text:    #1A1D2E;
+      --muted:   #6B7280;
+      --font:    'Nunito', sans-serif;
+      --fontb:   'Nunito Sans', sans-serif;
+    }
+
+    /* ── RESET ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--fontb);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.7;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    @media (min-width: 768px) {
+      .topbar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+      }
+      .logo     { grid-column: 2; }
+      .back-link { grid-column: 3; justify-self: end; margin-left: 0; }
+    }
+    .logo {
+      font-family: var(--font);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--blue);
+      letter-spacing: -0.5px;
+      text-decoration: none;
+    }
+    .logo span { color: var(--green); }
+    .back-link {
+      margin-left: auto;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      transition: all 0.15s;
+    }
+    .back-link:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--blue-l);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: var(--font);
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h2 {
+      font-family: var(--font);
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 2rem 0 0.6rem;
+    }
+    p {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+    ul {
+      padding-left: 1.4rem;
+      margin-bottom: 0.85rem;
+    }
+    li {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── FOOTER ── */
+    .footer-legal {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .footer-legal a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0 8px;
+    }
+    .footer-legal a:hover { color: var(--blue); }
+
+  </style>
+</head>
+<body>
+
+  <nav class="topbar">
+    <a class="logo" href="index.html">Wheel<span>Quiz</span></a>
+    <a class="back-link" href="index.html">← Back to App</a>
+  </nav>
+
+  <div class="content">
+
+    <div class="badge">Legal</div>
+    <h1>Privacy Policy</h1>
+    <p class="meta">Effective date: 1 January 2025 &nbsp;·&nbsp; Last updated: May 2026</p>
+
+    <div class="card">
+      <p>
+        WheelQuiz ("we", "our", or "us") is committed to protecting your privacy.
+        This Privacy Policy explains what information is processed when you use WheelQuiz
+        at <strong>wheelquiz.com</strong>, how that information is handled, and the choices
+        available to you.
+      </p>
+    </div>
+
+    <h2>1. Information We Collect</h2>
+    <p>
+      WheelQuiz is a browser-based tool that requires no account, login, or registration.
+      We do not collect or store any personally identifiable information (PII) on our
+      servers.
+    </p>
+    <p>The following types of data may be processed:</p>
+    <ul>
+      <li>
+        <strong>User-Inputted Content.</strong> Any names, lists, or question text you enter into the wheel are processed strictly within your browser's temporary memory (session state). This data is never transmitted to our servers, is never stored by us, and disappears entirely when you close or refresh your browser tab.
+      </li>
+      <li>
+        <strong>Locally stored preferences.</strong> WheelQuiz may save your wheel configurations, custom templates, and settings using your browser's <code>localStorage</code>. This data never leaves your device and is entirely inaccessible to us.
+      </li>
+      <li>
+        <strong>Usage data collected automatically.</strong> When you visit wheelquiz.com,
+        our hosting provider and any analytics service we use may automatically record your
+        IP address, browser type, operating system, referring URLs, pages visited, and the
+        date and time of your visit. This data is used strictly in anonymized, aggregate form to understand how
+        the site is used and to maintain service uptime.
+      </li>
+      <li>
+        <strong>Advertising data.</strong> WheelQuiz displays advertisements to support
+        free access to the service. Please refer to Section 4 for details on how this data is segmented safely based on audience types.
+      </li>
+    </ul>
+
+    <h2>2. How We Use Information</h2>
+    <p>Any automatically collected usage data is used solely for the following purposes:</p>
+    <ul>
+      <li>Monitoring site performance, uptime, and server security</li>
+      <li>Understanding aggregate traffic patterns to improve the user experience</li>
+      <li>Diagnosing live technical bugs and error logs</li>
+      <li>Complying with applicable legal obligations</li>
+    </ul>
+    <p>
+      We do not sell, rent, trade, or otherwise transfer any personal or usage information to
+      third parties.
+    </p>
+
+    <h2>3. Cookies</h2>
+    <p>WheelQuiz may use cookies or similar tracking technologies for the following purposes:</p>
+    <ul>
+      <li>
+        <strong>Functional cookies</strong> — to remember your custom preferences between sessions
+        (e.g., sound effects mute preference, layout configurations).
+      </li>
+      <li>
+        <strong>Analytics cookies</strong> — to collect anonymous, aggregate statistics
+        about global visitors using the site.
+      </li>
+      <li>
+        <strong>Advertising cookies</strong> — placed by third-party ad networks to manage essential utility limitations or personalize delivery metrics under applicable user consent frameworks.
+      </li>
+    </ul>
+    <p>
+      You can control or disable cookies through your browser settings. Disabling cookies
+      may affect certain convenience features of the site.
+    </p>
+
+    <h2>4. Third-Party Advertising &amp; Audience Safety</h2>
+    <p>
+      To keep WheelQuiz free for all users, we display advertisements served by third-party networks. Because WheelQuiz serves a mixed audience of classrooms, educators, and adult recreational users, we utilize smart tracking controls to ensure privacy compliance.
+    </p>
+    <p>
+      For school-based sessions, child-directed configurations, or users who opt out of tracking, we explicitly instruct our ad partners to serve <strong>non-personalized (contextual) ads</strong>. These ads are based solely on the theme of our platform and do not track individual cross-site history. For verified adult sessions or where tracking consent is explicitly given via standard cookie frameworks, ad networks may deliver personalized advertising to support operational revenue. Third-party ad partners may still deploy cookies or anonymous device tokens for basic programmatic fraud prevention, capping ad frequency, and tracking aggregate delivery statistics.
+    </p>
+
+    <h2>5. Children's Privacy &amp; Classroom Safety</h2>
+    <p>
+      WheelQuiz is built intentionally to be safe for school environments, classrooms, and users of all ages. We do not require account creation, and we do not knowingly collect, harvest, or store personal information from children under the age of 13.
+    </p>
+    <p>
+      Because all interactive gameplay data (such as names or questions entered into the wheel by students) is processed strictly in local browser memory and instantly vanishes when the tab is closed, no children's data ever reaches, remains on, or resides within our servers.
+    </p>
+
+    <h2>6. Data Security</h2>
+    <p>
+      We implement reasonable technical and organizational measures to protect the integrity of the WheelQuiz platform. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security.
+    </p>
+
+    <h2>7. Changes to This Policy</h2>
+    <p>
+      We may update this Privacy Policy from time to time. Any changes will be reflected
+      on this page with a revised effective date. Your continued use of WheelQuiz after
+      any changes constitutes your acceptance of the updated policy.
+    </p>
+  </div><footer class="footer-legal">
+    <span>© <script>document.write(new Date().getFullYear())</script> WheelQuiz. All rights reserved.</span>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="terms.html">Terms of Service</a>
+    <a href="copyright.html">Copyright</a>
+    <a href="contact.html">Contact Us</a>
+  </footer>
+
+</body>
+</html>
