@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us — WheelQuiz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+
+    /* ── VARIABLES ── */
+    :root {
+      --blue:    #1565C0;
+      --blue-l:  #E8F1FB;
+      --green:   #2E7D32;
+      --green-l: #E8F5E9;
+      --bg:      #F4F6FB;
+      --card:    #FFFFFF;
+      --border:  #E4E7EF;
+      --text:    #1A1D2E;
+      --muted:   #6B7280;
+      --font:    'Nunito', sans-serif;
+      --fontb:   'Nunito Sans', sans-serif;
+    }
+
+    /* ── RESET ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--fontb);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.7;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    @media (min-width: 768px) {
+      .topbar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+      }
+      .logo      { grid-column: 2; }
+      .back-link { grid-column: 3; justify-self: end; margin-left: 0; }
+    }
+    .logo {
+      font-family: var(--font);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--blue);
+      letter-spacing: -0.5px;
+      text-decoration: none;
+    }
+    .logo span { color: var(--green); }
+    .back-link {
+      margin-left: auto;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      transition: all 0.15s;
+    }
+    .back-link:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--blue-l);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: var(--font);
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── FORM CARD ── */
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    .form-card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .form-card-header .icon {
+      width: 36px;
+      height: 36px;
+      background: var(--blue-l);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .form-card-header h2 {
+      font-family: var(--font);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .form-card-header p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+    .form-embed {
+      width: 100%;
+      border: none;
+      display: block;
+      height: 750px;
+      min-height: 750px;
+    }
+
+    /* ── INFO CARDS ── */
+    .alt-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .alt-card {
+      flex: 1;
+      min-width: 200px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+    .alt-card .alt-icon { font-size: 20px; margin-bottom: 6px; }
+    .alt-card h3 {
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .alt-card p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* ── FOOTER ── */
+    .footer-legal {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .footer-legal a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0 8px;
+    }
+    .footer-legal a:hover { color: var(--blue); }
+
+  </style>
+</head>
+<body>
+
+  <!-- ── TOPBAR ── -->
+  <nav class="topbar">
+    <a class="logo" href="index.html">Wheel<span>Quiz</span></a>
+    <a class="back-link" href="index.html">← Back to App</a>
+  </nav>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div class="content">
+
+    <div class="badge">Get in Touch</div>
+    <h1>Contact Us</h1>
+    <p class="subtitle">
+      Have a question, suggestion, or spotted a bug? We'd love to hear from you.
+      Fill in the form below and we'll get back to you as soon as possible.
+    </p>
+
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="icon">✉️</div>
+        <div>
+          <h2>Send us a message</h2>
+        </div>
+      </div>
+
+      <iframe
+        class="form-embed"
+        src="https://docs.google.com/forms/d/e/1FAIpQLScIZDqsK5Xv_rW-yM_iBL9-1qQECZFFYy9KYN52Xoc67eyn6g/viewform?embedded=true"
+        frameborder="0"
+        marginheight="0"
+        marginwidth="0"
+        scrolling="no"
+        title="WheelQuiz Contact Form">
+        Loading form…
+      </iframe>
+    </div>
+
+    <div class="alt-row">
+      <div class="alt-card">
+        <div class="alt-icon">🐞</div>
+        <h3>Bug Reports</h3>
+        <p>If you found a bug, please describe your device, browser, and what happened so we can fix it quickly.</p>
+      </div>
+      <div class="alt-card">
+        <div class="alt-icon">💡</div>
+        <h3>Feature Requests</h3>
+        <p>Have an idea to make WheelQuiz better for your classroom? We read every suggestion.</p>
+      </div>
+      <div class="alt-card">
+        <div class="alt-icon">🤝</div>
+        <h3>Partnerships</h3>
+        <p>Interested in collaborating or featuring WheelQuiz? Reach out and let's talk.</p>
+      </div>
+    </div>
+
+  </div><!-- /.content -->
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer-legal">
+    <span>© <script>document.write(new Date().getFullYear())</script> WheelQuiz. All rights reserved.</span>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="terms.html">Terms of Service</a>
+    <a href="copyright.html">Copyright</a>
+    <a href="contact.html">Contact Us</a>
+  </footer>
+
+</body>
+</html>
