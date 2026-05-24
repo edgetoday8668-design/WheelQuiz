@@ -54,7 +54,7 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 /* Stage — where the active big wheel lives */
 .wheel-stage{
   flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;padding:1.5rem 1.5rem 0.5rem;
+  justify-content:flex-start;padding:0.75rem 1.5rem 0.5rem;
   position:relative;
   transition:background 0.4s;
 }
@@ -336,15 +336,15 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 
   <div class="right-panel" id="right-panel">
     <div id="ctrl-teacher">
+      <div class="ans-row">
+        <button class="ans-btn ok" id="t-ok" onclick="tMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
+        <button class="ans-btn no" id="t-no" onclick="tMark(false)" disabled>✗ Wrong<br><small>0 pts</small></button>
+      </div>
       <div class="stat-row" style="grid-template-columns:repeat(4,1fr)">
         <div class="stat-box"><div class="stat-val" id="t-r">0</div><div class="stat-lbl">Rounds</div></div>
         <div class="stat-box"><div class="stat-val" id="t-c" style="color:#2E7D32">0</div><div class="stat-lbl">Correct</div></div>
         <div class="stat-box"><div class="stat-val" id="t-w" style="color:#C62828">0</div><div class="stat-lbl">Wrong</div></div>
         <div class="stat-box"><div class="stat-val" id="t-p" style="color:#E65100">0</div><div class="stat-lbl">Punish</div></div>
-      </div>
-      <div class="ans-row">
-        <button class="ans-btn ok" id="t-ok" onclick="tMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
-        <button class="ans-btn no" id="t-no" onclick="tMark(false)" disabled>✗ Wrong<br><small>0 pts</small></button>
       </div>
       <!-- ── Score Setting Widget ── -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
@@ -383,14 +383,15 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
     </div>
 
     <div id="ctrl-student" style="display:none">
-      <div class="stat-row">
-        <div class="stat-box"><div class="stat-val" id="s-r">0</div><div class="stat-lbl">Rounds</div></div>
-        <div class="stat-box"><div class="stat-val" id="s-c" style="color:#2E7D32">0</div><div class="stat-lbl">Correct</div></div>
-        <div class="stat-box"><div class="stat-val" id="s-p" style="color:#C62828">0</div><div class="stat-lbl">Punish</div></div>
-      </div>
       <div class="ans-row">
         <button class="ans-btn ok" id="s-ok" onclick="sMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
         <button class="ans-btn no" id="s-no" onclick="sMark(false)" disabled>✗ Wrong<br><small>Spin W3!</small></button>
+      </div>
+      <div class="stat-row" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-box"><div class="stat-val" id="s-r">0</div><div class="stat-lbl">Rounds</div></div>
+        <div class="stat-box"><div class="stat-val" id="s-c" style="color:#2E7D32">0</div><div class="stat-lbl">Correct</div></div>
+        <div class="stat-box"><div class="stat-val" id="s-w" style="color:#C62828">0</div><div class="stat-lbl">Wrong</div></div>
+        <div class="stat-box"><div class="stat-val" id="s-p" style="color:#E65100">0</div><div class="stat-lbl">Punish</div></div>
       </div>
       <!-- ── Student Score Setting Widget ── -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
@@ -1196,7 +1197,7 @@ const T_DEFAULTS = [
 const S_DEFAULTS = [
   { title:'🔵 Wheel 1 — Team A',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
   { title:'🔴 Wheel 2 — Team B',      items:'Alex\nMia\nNoah\nEmma\nLiam', paletteIdx:1, soundKey:'chime',   narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
-  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — off by default
+  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — on by default
 ];
 function initWheelConfigs() {
   const prevLms = studentWheelConfigs.lastManStanding; //last man standing
@@ -1207,7 +1208,7 @@ function initWheelConfigs() {
     return cfg;
   });
   studentWheelConfigs = S_DEFAULTS.map((d,i) => ({...d, id:'s-wc-'+i}));
-  studentWheelConfigs.lastManStanding = !!prevLms; //last man standing
+  studentWheelConfigs.lastManStanding = (prevLms === undefined) ? true : !!prevLms; //last man standing — on by default
   studentWheelConfigs.teamVsTeam = !!prevTvv; //team vs team
   renderWheelConfigs('teacher');
   renderWheelConfigs('student');
@@ -1791,6 +1792,7 @@ function startStudent() {
   // Reset visible stat counters
   document.getElementById('s-r').textContent='0';
   document.getElementById('s-c').textContent='0';
+  const _swReset=document.getElementById('s-w');if(_swReset)_swReset.textContent='0';
   document.getElementById('s-p').textContent='0';
   // Reset answer buttons and result pill
   ['s-ok','s-no'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
@@ -2061,7 +2063,7 @@ function sMark(ok) {
     if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
   } else {
     playLoseSound();
-    wrongs++; document.getElementById('t-w') && (document.getElementById('t-w').textContent=wrongs);
+    wrongs++; const _swEl=document.getElementById('s-w'); if(_swEl)_swEl.textContent=wrongs;
     // Apply wrong score immediately so dashboard updates before punishment wheel spins
     if (scores[answerer] !== undefined) scores[answerer] = (scores[answerer]||0) + sScoreWrong;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong',points:sScoreWrong});
@@ -2123,7 +2125,7 @@ function queueStudentRound() {
 
 function clearArchive(){
   const strip=document.getElementById('archive-strip');
-  strip.innerHTML='<span class="archive-strip-label">📌 History</span><span style="font-size:12px;color:var(--muted);font-style:italic" id="archive-empty">Wheels you\'ve spun will appear here</span>';
+  if(strip)strip.innerHTML='<span class="archive-strip-label">📌 History</span><span style="font-size:12px;color:var(--muted);font-style:italic" id="archive-empty">Wheels you\'ve spun will appear here</span>';
 }
 
 function collapseAllWheels(m) {
@@ -2738,8 +2740,7 @@ function lmsMarkAnswer(ok){
     lmsEliminatePlayer(asker);
     lmsAfterEliminationThenContinue(asker,true,asker,answerer,pts); //last man standing — optional punish spin
   }else{
-    wrongs++;
-    if(scores[answerer]!==undefined)scores[answerer]=(scores[answerer]||0)-pts;
+    wrongs++;const _swLms=document.getElementById('s-w');if(_swLms)_swLms.textContent=wrongs;
     if(scores[asker]!==undefined)scores[asker]=(scores[asker]||0)+pts;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong (LMS)',points:-pts});
     updateSSB();
@@ -2893,8 +2894,7 @@ function tvvMarkAnswer(ok){
     updateTVVStatusPanel(asker,answerer);
     tvvFinishRound(true,asker,answerer,pts,false);
   }else{
-    wrongs++;
-    if(scores[askerTeam]!==undefined)scores[askerTeam]=(scores[askerTeam]||0)+pts;
+    wrongs++;const _swTvv=document.getElementById('s-w');if(_swTvv)_swTvv.textContent=wrongs;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong (TVV)',points:pts});
     updateSSB();
     lmsEliminatePlayer(answerer);
