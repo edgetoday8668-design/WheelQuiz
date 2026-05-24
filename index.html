@@ -144,6 +144,33 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 @keyframes slideDown{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(60px) scale(0.7)}}
 @keyframes slideUp{from{opacity:0;transform:translateY(-60px) scale(0.8)}to{opacity:1;transform:translateY(0) scale(1)}}
 
+/* last man standing */
+.lms-mode-panel{
+  margin-bottom:10px;padding:10px 12px;border-radius:10px;
+  border:2px solid var(--green);background:var(--green-l);
+}
+.lms-mode-panel.off{border-color:var(--border);background:var(--card)}
+.lms-status{
+  margin-bottom:8px;padding:8px 10px;border-radius:8px;
+  border:1px solid var(--border);background:var(--card);font-size:12px;line-height:1.5;
+}
+.lms-status strong{color:var(--green)}
+.lms-elim-shake{animation:lmsShake 0.55s ease}
+.lms-elim-flash{animation:lmsFlash 0.55s ease}
+@keyframes lmsShake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px) rotate(-1deg)}
+  40%{transform:translateX(8px) rotate(1deg)}
+  60%{transform:translateX(-6px)}
+  80%{transform:translateX(6px)}
+}
+@keyframes lmsFlash{
+  0%,100%{filter:none}
+  50%{filter:drop-shadow(0 0 18px rgba(198,40,40,0.85))}
+}
+.score-row.eliminated .score-name{text-decoration:line-through;opacity:0.45}
+.score-row.eliminated .score-bar{opacity:0.2}
+
 /* ── RIGHT PANEL ── */
 .right-panel{
   background:var(--bg);padding:1rem 1rem 1.5rem;
@@ -365,13 +392,66 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
         <button class="ans-btn ok" id="s-ok" onclick="sMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
         <button class="ans-btn no" id="s-no" onclick="sMark(false)" disabled>✗ Wrong<br><small>Spin W3!</small></button>
       </div>
+      <!-- ── Student Score Setting Widget ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="text-align:center">
+          <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ Correct &nbsp;<span id="s-correct-badge">+10 pts</span></div>
+          <div style="display:flex;align-items:center;border:2px solid var(--green);border-radius:10px;overflow:hidden;background:var(--card)">
+            <input id="s-score-correct" type="number" value="10" min="1" max="999"
+              oninput="updateStudentScoreSettings()"
+              style="flex:1;border:none;outline:none;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:transparent;text-align:center;min-width:0">
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px">✗ Wrong &nbsp;<span id="s-wrong-badge">0 pts</span></div>
+          <div style="display:flex;align-items:center;border:2px solid var(--green);border-radius:10px;overflow:hidden;background:var(--card)">
+            <input id="s-score-wrong" type="number" value="0" min="-999" max="999"
+              oninput="updateStudentScoreSettings()"
+              style="flex:1;border:none;outline:none;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:transparent;text-align:center;min-width:0">
+          </div>
+        </div>
+      </div>
       <div class="scoreboard">
         <div class="sb-title">🏆 Leaderboard</div>
         <div id="s-sb"><div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Start the game to see scores</div></div>
       </div>
       <button class="link-btn" onclick="showReport('student')">📊 View session results</button>
+      <!-- last man standing -->
+      <div id="lms-status-panel" class="lms-status" style="display:none">
+        <strong>🏆 Last Student Standing</strong><br>
+        <span id="lms-status-text">Enable in Game setup, then save &amp; start.</span>
+      </div>
       <div class="setup-panel">
         <h4>⚙️ Game setup</h4>
+        <div id="lms-mode-panel" class="lms-mode-panel off">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+            <input type="checkbox" id="lms-mode-chk" onchange="toggleLastManStandingMode(this.checked)"
+              style="margin-top:2px;width:15px;height:15px;accent-color:var(--green);flex-shrink:0">
+            <span>
+              <span style="font-size:13px;font-weight:800;color:var(--green)">🏆 LAST STUDENT STANDING</span>
+              <span style="display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4">
+                Wheel 1 = questioner, Wheel 2 = answerer. Battle until one player remains. Punishment wheel is off by default — enable Wheel 3 below to spin a punishment after each elimination.
+              </span>
+            </span>
+          </label>
+        </div>
+        <!-- team vs team -->
+        <div id="tvv-mode-panel" class="lms-mode-panel off" style="margin-top:8px">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+            <input type="checkbox" id="tvv-mode-chk" onchange="toggleTeamVsTeamMode(this.checked)"
+              style="margin-top:2px;width:15px;height:15px;accent-color:var(--blue);flex-shrink:0">
+            <span>
+              <span style="font-size:13px;font-weight:800;color:var(--blue)">⚔️ TEAM VS TEAM</span>
+              <span style="display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4">
+                Wheel 1 = Team A, Wheel 2 = Team B. Teams alternate asker/answerer each round. Game ends when one team is fully eliminated. Punishment wheel off by default.
+              </span>
+            </span>
+          </label>
+        </div>
+        <div id="tvv-status-panel" class="lms-status" style="display:none;margin-bottom:8px">
+          <strong>⚔️ Team vs Team</strong><br>
+          <span id="tvv-status-text">Enable in Game setup, then save &amp; start.</span>
+        </div>
         <div id="s-wheel-configs"></div>
         <button class="start-btn s" onclick="startStudent()">💾 Save settings &amp; start</button>
       </div>
@@ -424,9 +504,25 @@ let narrationOn=true; // legacy — mirrors voiceGender!=='off'
 let voiceGender='female'; // 'female' | 'male' | 'off' — starts ON (female)
 let currentSound='kalimba';
 let scoreCorrect=10, scoreWrong=0; // Customizable teacher scores
+let sScoreCorrect=10, sScoreWrong=0; // Customizable student scores
 const wheelLastAngles={}; // cfg.id → last stopped angle (all wheels)
 let pendingAdvanceWheel=false; // wait for Continue before swapping to next wheel on stage
 let teacherQuizEnded=false;
+let studentQuizEnded=false;
+//last man standing
+let lmsActive=false;
+let lmsEliminated=new Set();
+let lmsBlockedWheelIds=new Set();
+let lmsPendingRebuild=false;
+let lmsPendingPunishPlayer=null;
+let lmsAfterPunishAction=null;
+let lmsAwaitingPunishContinue=false; //last man standing — wait for Continue on punish result
+let lmsBattlePts=10;
+//team vs team
+let tvvActive=false;
+let tvvRoundNum=1;
+let curAskerTeamIdx=0;
+let curAnswererTeamIdx=1;
 const sessionDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 
 /* ══ AUDIO ENGINE ══════════════════════════════════════════════ */
@@ -563,14 +659,16 @@ function drumThru(vol,dest){
 }
 
 /* ══ WHEEL DRAWING ══════════════════════════════════════════════ */
-function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[],isPunishment=false){
+function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[],isPunishment=false,blackIndices=[]){ //last man standing: blackIndices
   if(!canvas)return;
   const sz=canvas.width,ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,sz,sz);
   const cx=sz/2,cy=sz/2,r=sz/2-4,n=items.length,slice=2*Math.PI/n;
   // Support both single greyIdx and array of greyIndices
   const greySet=new Set(greyIndices.length>0?greyIndices:(greyIdx>=0?[greyIdx]:[]));
-  const isGrey=i=>greySet.has(i);
+  const blackSet=new Set(blackIndices||[]); //last man standing
+  const isBlack=i=>blackSet.has(i); //last man standing
+  const isGrey=i=>!isBlack(i)&&greySet.has(i); //last man standing — black beats grey
 
   // Detect palette type from colors array reference
   const palIdx=COLOR_PALETTES?COLOR_PALETTES.findIndex(p=>p===colors):-1;
@@ -625,7 +723,7 @@ function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[],i
     }
 
     // 3. Define the actual color
-    const baseColor = isGrey(i) ? '#BBBBBB' : colors[colorIndex];
+    const baseColor = isBlack(i) ? '#1A1A1A' : (isGrey(i) ? '#BBBBBB' : colors[colorIndex]); //last man standing
     
     // 4. Draw the shape
     ctx.save();
@@ -635,11 +733,11 @@ function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[],i
     ctx.closePath();
     // ... (Continue with your existing if(isNeon) or if(isMetal) logic below this)
 
-    if(isNeon && !isGrey(i)){
+    if(isNeon && !isGrey(i) && !isBlack(i)){ //last man standing
       ctx.fillStyle=baseColor;
       ctx.shadowColor=baseColor;
       ctx.shadowBlur=sz*0.035;
-    } else if(isMetal && !isGrey(i)){
+    } else if(isMetal && !isGrey(i) && !isBlack(i)){ //last man standing
       // Metallic: linear gradient light→dark→light
       const a0r=a0+slice/2;
       const grad=ctx.createLinearGradient(
@@ -681,7 +779,8 @@ function drawWheelOnCanvas(canvas,items,colors,angle,greyIdx=-1,greyIndices=[],i
 
     // Text color by palette type
     let tc='#fff';
-    if(isGrey(i)) tc='rgba(255,255,255,0.4)';
+    if(isBlack(i)) tc='rgba(255,255,255,0.25)'; //last man standing
+    else if(isGrey(i)) tc='rgba(255,255,255,0.4)';
     else if(isMono) tc='#fff';
     else if(isPastel) tc='rgba(30,30,60,0.85)';
     else tc='#fff';
@@ -816,10 +915,15 @@ function getWheelStartAngle(cfg,queueIndex,itemCount){
   return 0;
 }
 
+//last man standing — draw active wheel with grey + black segment state
+function drawWheelFromState(canvas,w){
+  if(!canvas||!w)return;
+  drawWheelOnCanvas(canvas,w.items,w.colors,w.angle,w.greyIdx,w.greyIndices||[],w.isPunishment||false,w.blackIndices||[]);
+}
 function redrawActive(){
   if(!activeWheel)return;
   const c=document.getElementById('active-canvas');
-  if(c)drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[],activeWheel.isPunishment||false);
+  if(c)drawWheelFromState(c,activeWheel);
 }
 
 /* ══ WHEEL QUEUE SYSTEM ════════════════════════════════════════
@@ -853,12 +957,13 @@ function loadNextWheel(animate=true){
 
 function syncActiveToDOM(){
   if(!activeWheel)return;
+  if(lmsActive||tvvActive)lmsApplyBlackIndices(activeWheel); //last man standing / team vs team
   const titleEl = document.getElementById('active-wheel-title');
   if(titleEl) titleEl.value=activeWheel.title||'Wheel';
   const c=document.getElementById('active-canvas');
   const sz=c.parentElement.clientWidth||340;
   c.width=sz;c.height=sz;
-  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[],activeWheel.isPunishment||false);
+  drawWheelFromState(c,activeWheel);
   const btn=document.getElementById('main-spin-btn');
   btn.disabled=false;
   btn.textContent='⟳ Spin '+(activeWheel.title||'wheel');
@@ -866,8 +971,19 @@ function syncActiveToDOM(){
   const hub=document.getElementById('hub-spin-btn');
   if(hub){hub.disabled=false;hub.textContent='⟳';}
   if(mode==='teacher'&&teacherQuizEnded)setTeacherQuizCompleteUI();
+  if(mode==='student'&&studentQuizEnded)setStudentQuizCompleteUI();
   const rp=document.getElementById('main-result');
-  if(rp){rp.textContent='—';rp.classList.remove('flash');}
+  if(rp){
+    // Preserve the last wheel's result while mid-round (e.g. Wheel 1 result stays
+    // visible on the stage until Wheel 2 actually starts spinning).
+    // Only reset to '—' when starting fresh (no archived wheels yet).
+    if(archivedWheels.length===0){
+      rp.textContent='—';
+    } else {
+      rp.textContent=archivedWheels[archivedWheels.length-1].result;
+    }
+    rp.classList.remove('flash');
+  }
   // Apply neon background if this wheel uses neon palette
   const stage=document.getElementById('wheel-stage');
   if(stage){
@@ -887,7 +1003,7 @@ function archiveWheel(w,resultText){
   const item=document.createElement('div');item.className='archive-item';
   item.title=`${w.title}: ${resultText}`;
   const mc=document.createElement('canvas');mc.className='archive-mini-canvas';mc.width=44;mc.height=44;
-  drawWheelOnCanvas(mc,w.items,w.colors,w.angle,w.greyIdx);
+  drawWheelOnCanvas(mc,w.items,w.colors,w.angle,w.greyIdx,w.greyIndices||[],w.isPunishment||false,w.blackIndices||[]); //last man standing
   const nm=document.createElement('div');nm.className='archive-name';nm.textContent=w.title||'Wheel';
   const rs=document.createElement('div');rs.className='archive-result';rs.textContent=resultText;
   item.appendChild(mc);item.appendChild(nm);item.appendChild(rs);
@@ -910,8 +1026,32 @@ function setTeacherQuizCompleteUI(){
   if(hub){hub.disabled=true;hub.textContent='✓';}
 }
 
+/* ── Student quiz-complete helpers (mirrors teacher) ── */
+function isStudentQuizComplete(){
+  //team vs team — one team fully eliminated
+  if(tvvActive)return tvvIsGameComplete();
+  //last man standing — game ends when one active player remains
+  if(lmsActive&&lmsGetActivePlayers().length<=1)return true;
+  if(lmsActive||tvvActive)return false;
+  // Quiz is complete when the last non-punishment wheel (answerers) has all items picked
+  const nonPunish = studentWheelConfigs.filter(c => c.enabled && !isPunishWheel(c));
+  if (!nonPunish.length) return false;
+  const last = nonPunish[nonPunish.length - 1];
+  const items = last.items.split('\n').map(s=>s.trim()).filter(Boolean);
+  if (!items.length) return false;
+  const picked = last.pickedItems || new Set();
+  return items.every(item => picked.has(item));
+}
+function setStudentQuizCompleteUI(){
+  const btn=document.getElementById('main-spin-btn');
+  if(btn){btn.disabled=true;btn.textContent='✓ All students picked';btn.className='spin-btn s';}
+  const hub=document.getElementById('hub-spin-btn');
+  if(hub){hub.disabled=true;hub.textContent='✓';}
+}
+
 function spinActive(){
   if(teacherQuizEnded)return;
+  if(studentQuizEnded)return;
   if(!activeWheel||activeWheel.spinning)return;
   // Auto-initialise scores on first spin if user hasn't pressed Save yet
   if(scoreboardNames.size===0){
@@ -926,6 +1066,9 @@ function spinActive(){
   // Switch to this wheel's assigned sound
   if (activeWheel.soundKey) currentSound = activeWheel.soundKey;
   activeWheel.spinning=true;
+  // Clear the carried-over result now that this wheel is spinning
+  const _rpClear=document.getElementById('main-result');
+  if(_rpClear){_rpClear.textContent='—';_rpClear.classList.remove('flash');}
   document.getElementById('main-spin-btn').disabled=true;
   const _hub=document.getElementById('hub-spin-btn');
   if(_hub)_hub.disabled=true;
@@ -935,10 +1078,11 @@ function spinActive(){
   // ----------------------------------------------------
   const greySet=new Set(activeWheel.greyIndices||[]);
   if(activeWheel.greyIdx>=0)greySet.add(activeWheel.greyIdx);
+  const blackSet=new Set(activeWheel.blackIndices||[]); //last man standing
   
   const validIndices=[];
   for(let i=0;i<activeWheel.items.length;i++){
-    if(!greySet.has(i))validIndices.push(i);
+    if(!greySet.has(i)&&!blackSet.has(i))validIndices.push(i); //last man standing
   }
   // Fallback (should never happen unless all are somehow grey)
   if(validIndices.length===0) validIndices.push(0);
@@ -966,7 +1110,7 @@ function spinActive(){
   function frame(now){
     const pct=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-pct,4);
     activeWheel.angle=a0+totalRot*ease;
-    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[],activeWheel.isPunishment||false);
+    drawWheelFromState(c,activeWheel);
     
     if(pct<1){requestAnimationFrame(frame);return;}
     
@@ -974,10 +1118,11 @@ function spinActive(){
     activeWheel.spinning=false;
     
     // Resolve grey skip (kept as a failsafe, but our pre-calc guarantees it won't be needed)
-    let idx=resolveGreySkip(activeWheel,greySet);
+    const skipSet=new Set([...greySet,...blackSet]); //last man standing
+    let idx=resolveGreySkip(activeWheel,skipSet);
     rotateWheelToSegment(activeWheel,idx);
     saveWheelAngle(activeWheel);
-    drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,activeWheel.greyIndices||[],activeWheel.isPunishment||false);
+    drawWheelFromState(c,activeWheel);
     
     // Re-read index post-snap
     const snapIdx=getWinnerIndexFromWheel(activeWheel);
@@ -989,7 +1134,7 @@ function spinActive(){
     rp.classList.add('flash');
     setTimeout(()=>rp.classList.remove('flash'),800);
     
-    // Voice narration
+    // Voice narration — in TVV mode skip the wheel phrase (name only)
     const phrase = (activeWheel.narration || '').trim();
     const wv = activeWheel.wheelVoice || 'female';
     if (wv !== 'off') {
@@ -1049,20 +1194,24 @@ const T_DEFAULTS = [
   { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
 ];
 const S_DEFAULTS = [
-  { title:'❓ Wheel 1 — Askers',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', wheelVoice:'female', enabled:true, eliminateSpinBefore:true },
-  { title:'🙋 Wheel 2 — Answerers',   items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:1, soundKey:'chime',   narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true },
-  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true },
+  { title:'🔵 Wheel 1 — Team A',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
+  { title:'🔴 Wheel 2 — Team B',      items:'Alex\nMia\nNoah\nEmma\nLiam', paletteIdx:1, soundKey:'chime',   narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
+  { title:'😂 Wheel 3 — Punishments', items:'10x Push ups\n10x Sit ups\nTruth\nDare\nSing for 10 seconds\nTeach the correct answer\n10x Jumping jacks', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — off by default
 ];
-
 function initWheelConfigs() {
+  const prevLms = studentWheelConfigs.lastManStanding; //last man standing
+  const prevTvv = studentWheelConfigs.teamVsTeam; //team vs team
   teacherWheelConfigs = T_DEFAULTS.map((d,i) => {
     const cfg = {...d, id:'t-wc-'+i};
     if (i === 0) cfg.askedQuestions = new Set();
     return cfg;
   });
   studentWheelConfigs = S_DEFAULTS.map((d,i) => ({...d, id:'s-wc-'+i}));
+  studentWheelConfigs.lastManStanding = !!prevLms; //last man standing
+  studentWheelConfigs.teamVsTeam = !!prevTvv; //team vs team
   renderWheelConfigs('teacher');
   renderWheelConfigs('student');
+  syncStudentBattleModeUI(); //last man standing + team vs team
 }
 
 function getConfigs(m) { return m==='teacher' ? teacherWheelConfigs : studentWheelConfigs; }
@@ -1291,7 +1440,7 @@ function updateConfigItems(m, idx, val) {
     if (items.length >= 2) {
       activeWheel.items = items;
       const c = document.getElementById('active-canvas');
-      if (c) drawWheelOnCanvas(c, activeWheel.items, activeWheel.colors, activeWheel.angle, activeWheel.greyIdx);
+      if (c) drawWheelFromState(c, activeWheel); //last man standing
     }
   }
 }
@@ -1438,6 +1587,32 @@ function buildQueueFromConfigs(m, includePunishment=false) {
     ? enabled.filter(c => !isPunishWheel(c))
     : enabled;
   if (filtered.length === 0) return [];
+  //last man standing — one wheel exhausted: dual-spin survivor wheel only
+  if(m==='student'&&lmsActive){
+    const battle=filtered;
+    const unblocked=battle.filter(c=>!lmsBlockedWheelIds.has(c.id));
+    if(unblocked.length===1&&battle.length>=2){
+      return lmsBuildDualSpinQueue(unblocked[0]);
+    }
+    if(unblocked.length===0)return[];
+    return unblocked.map((cfg,i)=>{
+      const items=cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
+      const colors=COLOR_PALETTES[cfg.paletteIdx]||C1;
+      const w=buildWheel('custom-'+i,cfg.title,items,colors,getWheelStartAngle(cfg,i,items.length));
+      w.configRef=cfg;
+      w.soundKey=cfg.soundKey||'kalimba';
+      w.narration=cfg.narration||'';
+      w.wheelVoice=cfg.wheelVoice||'female';
+      w.isLastWheel=false;
+      lmsApplyBlackIndices(w);
+      if(i===0&&cfg.eliminateSpinBefore!==false)cfg.pickedItems=new Set();
+      return w;
+    });
+  }
+  //team vs team — alternating asker wheel each round
+  if(m==='student'&&tvvActive){
+    return tvvBuildRoundQueue();
+  }
   return filtered.map((cfg, i) => {
     const items = cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
     const colors = COLOR_PALETTES[cfg.paletteIdx] || C1;
@@ -1447,9 +1622,14 @@ function buildQueueFromConfigs(m, includePunishment=false) {
     w.narration   = cfg.narration || '';
     w.wheelVoice  = cfg.wheelVoice || 'female'; // per-wheel voice gender
     w.isLastWheel = false;
+    //last man standing / team vs team — black out eliminated players
+    if(m==='student'&&(lmsActive||tvvActive)){
+      lmsApplyBlackIndices(w);
+      if(lmsActive&&i===0&&cfg.eliminateSpinBefore!==false) cfg.pickedItems=new Set();
+    }
     // Grey out previously picked items on ANY wheel when eliminateSpinBefore is enabled.
     // Wheel 1 uses askedQuestions; all other wheels use pickedItems (same pattern).
-    if (cfg.eliminateSpinBefore !== false) {
+    if (!lmsActive && !tvvActive && cfg.eliminateSpinBefore !== false) {
       const history = (m === 'teacher' && i === 0) ? cfg.askedQuestions : cfg.pickedItems;
       if (history && history.size > 0) {
         const greyIndices = [];
@@ -1509,6 +1689,26 @@ function updateScoreSettings() {
   if (noBtn) noBtn.innerHTML = `✗ Wrong<br><small>${scoreWrong} pts</small>`;
 }
 
+function updateStudentScoreSettings() {
+  const correctInput = document.getElementById('s-score-correct');
+  const wrongInput   = document.getElementById('s-score-wrong');
+  if (!correctInput || !wrongInput) return;
+  sScoreCorrect = parseInt(correctInput.value);
+  if (isNaN(sScoreCorrect) || sScoreCorrect < 1) sScoreCorrect = 10;
+  sScoreWrong = parseInt(wrongInput.value);
+  if (isNaN(sScoreWrong)) sScoreWrong = 0;
+  const cb = document.getElementById('s-correct-badge');
+  const wb = document.getElementById('s-wrong-badge');
+  if (cb) cb.textContent = `+${sScoreCorrect} pts`;
+  if (wb) wb.textContent = `${sScoreWrong} pts`;
+  const okBtn = document.getElementById('s-ok');
+  const noBtn = document.getElementById('s-no');
+  if (okBtn) okBtn.innerHTML = `✓ Correct<br><small>+${sScoreCorrect} pts</small>`;
+  if (noBtn) noBtn.innerHTML = `✗ Wrong<br><small>${sScoreWrong > 0 ? '+' : ''}${sScoreWrong} pts</small>`;
+  lmsBattlePts=sScoreCorrect; //last man standing — live battle point value
+  if(studentWheelConfigs.lastManStanding||studentWheelConfigs.teamVsTeam)syncStudentBattleModeUI();
+}
+
 /* ══ START GAMES (rewritten to use configs) ══════════════════ */
 function startTeacher() {
   // Clear ALL elimination history BEFORE building the queue so wheels load with no grey segments
@@ -1551,6 +1751,30 @@ function startTeacher() {
 }
 
 function startStudent() {
+  //last man standing / team vs team — read mode from checkboxes
+  const lmsChk=document.getElementById('lms-mode-chk');
+  const tvvChk=document.getElementById('tvv-mode-chk');
+  studentWheelConfigs.teamVsTeam=!!(tvvChk&&tvvChk.checked);
+  studentWheelConfigs.lastManStanding=!!(lmsChk&&lmsChk.checked)&&!studentWheelConfigs.teamVsTeam;
+  tvvActive=mode==='student'&&!!studentWheelConfigs.teamVsTeam;
+  lmsActive=mode==='student'&&!!studentWheelConfigs.lastManStanding&&!tvvActive;
+  lmsEliminated=new Set();
+  lmsBlockedWheelIds=new Set(); //last man standing
+  lmsPendingRebuild=false; //last man standing
+  lmsPendingPunishPlayer=null;
+  lmsAfterPunishAction=null;
+  lmsAwaitingPunishContinue=false;
+  lmsBattlePts=sScoreCorrect;
+  tvvRoundNum=1; //team vs team
+  curAskerTeamIdx=0;
+  curAnswererTeamIdx=1;
+  syncStudentBattleModeUI();
+  const lmsPanel=document.getElementById('lms-status-panel');
+  if(lmsPanel)lmsPanel.style.display=lmsActive?'':'none';
+  const tvvPanel=document.getElementById('tvv-status-panel');
+  if(tvvPanel)tvvPanel.style.display=tvvActive?'':'none';
+  if(lmsActive)updateLMSStatusPanel();
+  if(tvvActive)updateTVVStatusPanel();
   // Clear ALL elimination history BEFORE building the queue so wheels load with no grey segments
   studentWheelConfigs.forEach(cfg => { cfg.pickedItems = new Set(); });
   teacherWheelConfigs.forEach(cfg => { cfg.pickedItems = new Set(); });
@@ -1561,6 +1785,7 @@ function startStudent() {
   }
   scores={}; punishCt={}; scoreboardNames=new Set(); rounds=correct=wrongs=punishments=0; sessionLog=[]; archivedWheels=[];
   Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
+  studentQuizEnded=false;
   curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
   pendingAdvanceWheel=false;
   // Reset visible stat counters
@@ -1572,13 +1797,18 @@ function startStudent() {
   const _rp2=document.getElementById('main-result');if(_rp2){_rp2.textContent='Spin to begin';_rp2.classList.remove('flash');}
   const _sb2=document.getElementById('main-spin-btn');if(_sb2){_sb2.disabled=false;_sb2.textContent='⟳ Spin';}
   const _hb2=document.getElementById('hub-spin-btn');if(_hb2){_hb2.disabled=false;_hb2.textContent='⟳';}
-  // Collect ALL player names across non-punishment wheels for scoring
-  queue.forEach((w,wi) => {
-    const isPunish = (w.title||'').toLowerCase().includes('punish') || w.title.includes('😂');
-    if (!isPunish) {
-      w.items.forEach(item => { if(!scores[item]) scores[item]=0; scoreboardNames.add(item); });
-    }
-  });
+  // Collect player names from Wheel 2 (answerers) only for scoring
+  const w2 = queue[1] || queue[0]; // Wheel 2 is index 1; fallback to first if only 1 wheel
+  if (tvvActive) {
+    //team vs team — team scoreboard keys
+    const battle=lmsGetBattleWheels();
+    battle.forEach((cfg,i)=>{const k=tvvGetTeamKey(i);scores[k]=0;scoreboardNames.add(k);});
+  } else if (lmsActive) {
+    //last man standing — dynamic player list from both battle wheels
+    lmsGetAllPlayers().forEach(name => { scores[name]=0; scoreboardNames.add(name); });
+  } else if (w2) {
+    w2.items.forEach(item => { if(!scores[item]) scores[item]=0; scoreboardNames.add(item); });
+  }
   // punishCt only for players in scoreboardNames
   scoreboardNames.forEach(item => {
     if(!punishCt[item]) punishCt[item]=0;
@@ -1589,6 +1819,7 @@ function startStudent() {
   wheelQueue = queue;
   loadNextWheel(false);
   updateSSB();
+  updateStudentScoreSettings(); // sync button labels with current score inputs
   collapseAllWheels('student');
 }
 
@@ -1610,14 +1841,19 @@ function onWheelResult(key, winner) {
     }
     else                 curGroup = winner;
   } else {
-    if (spinIndex === 0) curAsker   = winner;
-    else                 curAnswerer = winner;
+    if (spinIndex === 0) {
+      curAsker=winner;
+      if(tvvActive&&activeWheel.tvvTeamIdx!==undefined)curAskerTeamIdx=activeWheel.tvvTeamIdx; //team vs team
+    } else {
+      curAnswerer=winner;
+      if(tvvActive&&activeWheel.tvvTeamIdx!==undefined)curAnswererTeamIdx=activeWheel.tvvTeamIdx; //team vs team
+    }
   }
   // For non-Wheel-1 wheels: record winner into pickedItems on the config so
   // buildQueueFromConfigs can grey it out next round when eliminateSpinBefore is on.
   if (activeWheel.configRef && !(mode === 'teacher' && spinIndex === 0)) {
     const cfg = activeWheel.configRef;
-    if (cfg.eliminateSpinBefore !== false) {
+    if (!lmsActive && !tvvActive && cfg.eliminateSpinBefore !== false) { // battle modes — no pickedItems history
       if (!cfg.pickedItems) cfg.pickedItems = new Set();
       cfg.pickedItems.add(winner);
     }
@@ -1667,22 +1903,43 @@ function onWheelResult(key, winner) {
       // Student mode — check if this final wheel IS the punishment wheel
       const isPunishment = isPunishWheel(activeWheel);
       if (isPunishment) {
-        // Punishment spin resolved — give asker +5, no answer buttons needed
+        // Punishment spin resolved — update counter and continue
         punishments++;
         document.getElementById('s-p').textContent = punishments;
+        //last man standing — punishment after elimination
+        if((lmsActive||tvvActive)&&lmsAfterPunishAction){
+          const punishedName=lmsPendingPunishPlayer||activeWheel.lmsPunishFor||'—';
+          if(punishCt[punishedName]!==undefined)punishCt[punishedName]++;
+          playPunishSound();
+          updateSSB();
+          showOv('😂',punishedName+' gets punished!',winner,'punish'); //last man standing — match student punish UI
+          lmsAwaitingPunishContinue=true;
+          document.getElementById('main-spin-btn').disabled=true;
+          document.getElementById('main-spin-btn').textContent='Continue ↑';
+          return;
+        }
         // Get names from archived non-punishment wheels
         const nonPunish = archivedWheels.filter(w => !isPunishWheel({title:w.title}));
         const askerName    = nonPunish[0]?.result || '—';
         const answererName = nonPunish[1]?.result || askerName;
         if (punishCt[answererName] !== undefined) punishCt[answererName]++;
-        if (scores[askerName]      !== undefined) scores[askerName] = (scores[askerName]||0)+5;
         playPunishSound();
-        showOv('😂', answererName + ' gets punished!',
-          winner + (askerName !== '—' ? '\n\n🎤 '+askerName+' gets +5!' : ''), 'punish');
         updateSSB();
-        resetRound();
-        const q = buildQueueFromConfigs('student', false);
-        if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
+        // Check if this punishment was the last round — end quiz after spinning
+        if (activeWheel.triggersQuizEnd) {
+          studentQuizEnded=true;
+          pendingAdvanceWheel=false;
+          curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
+          archivedWheels=[];
+          wheelQueue=[];
+          setStudentQuizCompleteUI();
+          showOv('😂🎯', answererName + ' gets punished!', winner + '\n\nQuiz Ended! View or Download Scoreboard', 'punish');
+        } else {
+          showOv('😂', answererName + ' gets punished!', winner, 'punish');
+          resetRound();
+          const q = buildQueueFromConfigs('student', false);
+          if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
+        }
       } else {
         // Normal student last wheel — enable correct/wrong buttons
         const askerName    = archivedWheels[0]?.result || '—';
@@ -1690,8 +1947,17 @@ function onWheelResult(key, winner) {
         // Store cleanly for sMark to use
         curAsker    = askerName;
         curAnswerer = answererName;
+        const lmsHint = lmsActive ? `\n⚔️ Last Student Standing — ${lmsGetActivePlayers().length} players left` : ''; //last man standing
+        const tvvHint = tvvActive ? `\n⚔️ Team vs Team — Round ${tvvRoundNum}: ${tvvTeamDisplay(curAskerTeamIdx)} asks, ${tvvTeamDisplay(curAnswererTeamIdx)} answers` : ''; //team vs team
         showOv('🙋', askerName + ' → ' + answererName,
-          askerName + ' asks a question!\n' + answererName + ' must answer!\n\nMark result above ↑', 'info');
+          askerName + ' asks a question!\n' + answererName + ' must answer!\n\nMark result above ↑' + lmsHint + tvvHint, 'info');
+        if(lmsActive)updateLMSStatusPanel(askerName,answererName); //last man standing
+        if(tvvActive)updateTVVStatusPanel(askerName,answererName); //team vs team
+        // TVV hardcoded interactive narration — spoken when both wheels have resolved
+        if(tvvActive){
+          const tvvVoice=(studentWheelConfigs[0]&&studentWheelConfigs[0].wheelVoice!=='off')?studentWheelConfigs[0].wheelVoice:'female';
+          speakWithGender(askerName+' asks a question! '+answererName+' must answer!', tvvVoice);
+        }
         document.getElementById('s-ok').disabled = false;
         document.getElementById('s-no').disabled = false;
         document.getElementById('main-spin-btn').disabled = true;
@@ -1763,38 +2029,71 @@ function tMark(ok) {
 }
 
 function sMark(ok) {
+  if(tvvActive){tvvMarkAnswer(ok);return;} //team vs team
+  if(lmsActive){lmsMarkAnswer(ok);return;} //last man standing
   rounds++; document.getElementById('s-r').textContent=rounds;
   const answerer = curAnswerer || archivedWheels[1]?.result || '—';
   const asker    = curAsker    || archivedWheels[0]?.result || '—';
+  const quizDone = isStudentQuizComplete();
   if (ok) {
     correct++; document.getElementById('s-c').textContent=correct;
-    if (scores[answerer]!==undefined) scores[answerer]=(scores[answerer]||0)+10;
-    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Correct',points:10});
+    if (scores[answerer]!==undefined) scores[answerer]=(scores[answerer]||0)+sScoreCorrect;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Correct',points:sScoreCorrect});
+    updateSSB();
+    document.getElementById('s-ok').disabled=true;
+    document.getElementById('s-no').disabled=true;
+    if(quizDone){
+      studentQuizEnded=true;
+      pendingAdvanceWheel=false;
+      curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
+      archivedWheels=[];
+      wheelQueue=[];
+      playWinSound(); launchConfetti();
+      setStudentQuizCompleteUI();
+      showOv('🎯','Quiz Ended!','View or Download Scoreboard\nShare your result','info');
+      return;
+    }
     playWinSound(); launchConfetti();
-    showOv('🎉',`${answerer} nailed it!`,`+10 points! 🏆\n🎤 ${asker} asked great!`,'win');
-    updateSSB(); resetRound();
+    showOv('🎉',`${answerer} nailed it!`,`+${sScoreCorrect} points! 🏆\n🎤 ${asker} asked great!`,'win');
+    resetRound();
     // Queue next round
     const q = buildQueueFromConfigs('student');
     if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
   } else {
     playLoseSound();
     wrongs++; document.getElementById('t-w') && (document.getElementById('t-w').textContent=wrongs);
-    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong',points:0});
+    // Apply wrong score immediately so dashboard updates before punishment wheel spins
+    if (scores[answerer] !== undefined) scores[answerer] = (scores[answerer]||0) + sScoreWrong;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong',points:sScoreWrong});
+    updateSSB();
     document.getElementById('s-ok').disabled=true;
     document.getElementById('s-no').disabled=true;
-    // Try to find a punishment wheel to queue
+    // Punishment wheel takes priority — spin it BEFORE checking quiz complete
     const pw = getPunishWheelFromConfigs('student');
     if (pw) {
+      // Mark quizDone on the punishment wheel so it triggers end-of-quiz after spinning
+      pw.triggersQuizEnd = quizDone;
       wheelQueue = [pw];
-      showOv('😢',`${answerer} got it wrong!`,`Spin the punishment wheel! 👇\n🎤 ${asker} will get +5!`,'lose');
+      showOv('😢',`${answerer} got it wrong!`,`Spin the punishment wheel! 👇`,'lose');
       loadNextWheel(true);
-    } else {
-      // No punishment wheel — just end round
-      showOv('😢',`${answerer} got it wrong!`,`No punishment wheel set.\nMoving to next round.`,'lose');
-      resetRound();
-      const q = buildQueueFromConfigs('student');
-      if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
+      return;
     }
+    // No punishment wheel — now check if quiz is complete
+    if(quizDone){
+      studentQuizEnded=true;
+      pendingAdvanceWheel=false;
+      curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
+      archivedWheels=[];
+      wheelQueue=[];
+      setStudentQuizCompleteUI();
+      showOv('🎯','Quiz Ended!','View or Download Scoreboard\nShare your result','info');
+      return;
+    }
+    // Not done — move to next round
+    showOv('😢',`${answerer} got it wrong!`,`No punishment wheel set.\nMoving to next round.`,'lose');
+    resetRound();
+    const q = buildQueueFromConfigs('student');
+    if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
   }
 }
 
@@ -1807,9 +2106,9 @@ function resetRound() {
     const el=document.getElementById(id); if(el) el.disabled=true;
   });
   const btn=document.getElementById('main-spin-btn');
-  if(btn&&!teacherQuizEnded){ btn.disabled=false; btn.textContent='⟳ Spin'; }
+  if(btn&&!teacherQuizEnded&&!studentQuizEnded){ btn.disabled=false; btn.textContent='⟳ Spin'; }
   const hub=document.getElementById('hub-spin-btn');
-  if(hub&&!teacherQuizEnded){ hub.disabled=false; hub.textContent='⟳'; }
+  if(hub&&!teacherQuizEnded&&!studentQuizEnded){ hub.disabled=false; hub.textContent='⟳'; }
 }
 
 /* ══ QUEUE + LEGACY stubs (kept for switchMode) ════════════ */
@@ -1865,10 +2164,13 @@ function updateSSB(){
   }
   const max = Math.max(...entries.map(e=>e[1]), 10);
   document.getElementById('s-sb').innerHTML = entries
-    .map(([n,p],i)=>`<div class="score-row">
-      <span class="score-name">${i===0&&p>0?'🥇 ':''}${n}${punishCt[n]?` <span style="font-size:10px;color:var(--muted)">(${punishCt[n]}x😂)</span>`:''}</span>
-      <div class="score-bar-bg"><div class="score-bar" style="width:${Math.round(p/max*100)}%;background:${SBC[i%SBC.length]}"></div></div>
-      <span class="score-pts">${p}pts</span></div>`).join('');
+    .map(([n,p],i)=>{
+      const elim=lmsActive&&!tvvActive&&lmsEliminated.has(n); //last man standing (not team rows)
+      return `<div class="score-row${elim?' eliminated':''}">
+      <span class="score-name">${i===0&&p>0&&!elim?'🥇 ':''}${elim?'💀 ':''}${n}${!lmsActive&&!tvvActive&&punishCt[n]?` <span style="font-size:10px;color:var(--muted)">(${punishCt[n]}x😂)</span>`:''}</span>
+      <div class="score-bar-bg"><div class="score-bar" style="width:${Math.round(p/max*100)}%;background:${elim?'#555':SBC[i%SBC.length]}"></div></div>
+      <span class="score-pts">${p}pts</span></div>`;
+    }).join('');
 }
 
 /* ══ MODE SWITCH ════════════════════════════════════════════════ */
@@ -1889,10 +2191,22 @@ function switchMode(m){
   document.getElementById('main-spin-btn').textContent='⟳ Spin';
   document.getElementById('main-result').textContent='Spin to begin';
   teacherQuizEnded=false;
+  lmsActive=false; //last man standing
+  tvvActive=false; //team vs team
+  lmsEliminated=new Set();
+  lmsBlockedWheelIds=new Set();
+  lmsPendingRebuild=false;
+  lmsPendingPunishPlayer=null;
+  lmsAfterPunishAction=null;
+  lmsAwaitingPunishContinue=false;
+  const lmsPanel=document.getElementById('lms-status-panel');
+  if(lmsPanel)lmsPanel.style.display='none';
+  const tvvPanel=document.getElementById('tvv-status-panel');
+  if(tvvPanel)tvvPanel.style.display='none';
   if(m==='teacher'){
     if(teacherWheelConfigs[0])teacherWheelConfigs[0].askedQuestions=new Set();
     queueTeacherRound();
-  }else queueStudentRound();
+  }else{syncStudentBattleModeUI();queueStudentRound();}
 }
 
 /* ══ OVERLAY ════════════════════════════════════════════════════ */
@@ -1909,6 +2223,32 @@ function showOv(em,ti,su,type='info'){
 }
 function closeOv(){
   document.getElementById('ov').classList.remove('show');
+  //last man standing — resume on survivor wheel after "Wheel X Eliminated"
+  if(lmsPendingRebuild){
+    lmsPendingRebuild=false;
+    resetRound();
+    const q=buildQueueFromConfigs('student');
+    if(q.length>0){
+      q[q.length-1].isLastWheel=true;
+      wheelQueue=q;
+      loadNextWheel(false);
+      updateLMSStatusPanel();
+      updateTVVStatusPanel();
+    }
+    const btn=document.getElementById('main-spin-btn');
+    if(btn&&!studentQuizEnded){btn.disabled=false;btn.textContent='⟳ Spin';}
+    return;
+  }
+  //last man standing / team vs team — after punish result overlay, continue round
+  if(lmsAwaitingPunishContinue&&lmsAfterPunishAction){
+    lmsAwaitingPunishContinue=false;
+    const resume=lmsAfterPunishAction;
+    lmsAfterPunishAction=null;
+    lmsPendingPunishPlayer=null;
+    resetRound();
+    resume();
+    return;
+  }
   if(pendingAdvanceWheel){
     pendingAdvanceWheel=false;
     if(wheelQueue.length>0) loadNextWheel(true);
@@ -2087,8 +2427,484 @@ window.addEventListener('resize',()=>{
   const c=document.getElementById('active-canvas');
   if(!c||!activeWheel)return;
   const sz=c.parentElement.clientWidth||340;c.width=sz;c.height=sz;
-  drawWheelOnCanvas(c,activeWheel.items,activeWheel.colors,activeWheel.angle,activeWheel.greyIdx,[],activeWheel.isPunishment||false);
+  drawWheelFromState(c,activeWheel);
 });
+
+/* ══ LAST STUDENT STANDING (student mode only) ═══════════════════
+   Appended gameplay — does not modify teacherWheelConfigs / T_DEFAULTS.
+══════════════════════════════════════════════════════════════════ */
+//last man standing
+function toggleLastManStandingMode(on){
+  studentWheelConfigs.lastManStanding=!!on;
+  if(on){
+    studentWheelConfigs.teamVsTeam=false;
+    const tvvChk=document.getElementById('tvv-mode-chk');
+    if(tvvChk)tvvChk.checked=false;
+    const pCfg=studentWheelConfigs.find(c=>isPunishWheel(c));
+    if(pCfg)pCfg.enabled=false;
+    renderWheelConfigs('student');
+  }
+  syncStudentBattleModeUI();
+}
+//team vs team
+function toggleTeamVsTeamMode(on){
+  studentWheelConfigs.teamVsTeam=!!on;
+  if(on){
+    studentWheelConfigs.lastManStanding=false;
+    const lmsChk=document.getElementById('lms-mode-chk');
+    if(lmsChk)lmsChk.checked=false;
+    const pCfg=studentWheelConfigs.find(c=>isPunishWheel(c));
+    if(pCfg)pCfg.enabled=false;
+    renderWheelConfigs('student');
+  }
+  syncStudentBattleModeUI();
+}
+//last man standing + team vs team — shared punishment wheel check
+function lmsIsPunishmentEnabled(){
+  return (lmsActive||tvvActive)&&studentWheelConfigs.some(c=>c.enabled&&isPunishWheel(c));
+}
+//last man standing + team vs team
+function syncStudentBattleModeUI(){
+  syncLastManStandingUI();
+  syncTeamVsTeamUI();
+}
+//team vs team
+function syncTeamVsTeamUI(){
+  const on=!!studentWheelConfigs.teamVsTeam;
+  const chk=document.getElementById('tvv-mode-chk');
+  const panel=document.getElementById('tvv-mode-panel');
+  if(chk)chk.checked=on;
+  if(panel){
+    panel.classList.toggle('off',!on);
+    panel.style.borderColor=on?'var(--blue)':'var(--border)';
+    panel.style.background=on?'var(--blue-l)':'var(--card)';
+  }
+  const noBtn=document.getElementById('s-no');
+  if(noBtn&&on)noBtn.innerHTML=`✗ Wrong<br><small>eliminate answerer · +${lmsBattlePts||sScoreCorrect} pts to asker team</small>`;
+  else if(noBtn&&!studentWheelConfigs.lastManStanding)updateStudentScoreSettings();
+}
+//last man standing — spin punishment wheel before resuming LMS round
+function lmsStartPunishmentSpin(playerName,callback){
+  const pw=getPunishWheelFromConfigs('student');
+  if(!pw){if(callback)callback();return false;}
+  lmsPendingPunishPlayer=playerName;
+  lmsAfterPunishAction=callback;
+  pw.lmsPunishFor=playerName;
+  pw.isLastWheel=true;
+  wheelQueue=[pw];
+  archivedWheels=[];
+  ['s-ok','s-no'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
+  showOv('😂',playerName+' eliminated!','Spin the punishment wheel! 👇','punish');
+  loadNextWheel(true);
+  return true;
+}
+//last man standing
+function lmsAfterEliminationThenContinue(eliminatedName,ok,asker,answerer,pts){
+  const proceedNoPunish=()=>lmsFinishMarkAnswerRound(ok,asker,answerer,pts,false);
+  const proceedAfterPunish=()=>lmsFinishMarkAnswerRound(ok,asker,answerer,pts,true); //last man standing — skip duplicate correct/wrong box
+  if(lmsIsPunishmentEnabled()){
+    if(lmsStartPunishmentSpin(eliminatedName,proceedAfterPunish))return;
+  }
+  proceedNoPunish();
+}
+//last man standing
+function lmsFinishMarkAnswerRound(ok,asker,answerer,pts,skipOutcomeOverlay){
+  if(isStudentQuizComplete()){
+    const winner=lmsGetActivePlayers()[0]||(ok?answerer:asker);
+    studentQuizEnded=true;pendingAdvanceWheel=false;
+    archivedWheels=[];wheelQueue=[];
+    playWinSound();launchConfetti();
+    setStudentQuizCompleteUI();
+    showOv('🏆','Last Student Standing!',`${winner} wins with ${scores[winner]||0} pts!`,'win');
+    return;
+  }
+  if(lmsTryBlockExhaustedWheel())return;
+  if(!skipOutcomeOverlay){
+    //last man standing — no playWinSound/playLoseSound here; elimination sound already played in lmsEliminationFX (matches punish-on flow)
+    if(ok){
+      launchConfetti();
+      showOv('🎉',`${answerer} correct!`,`+${pts} pts · ${asker} eliminated ⚔️`,'win');
+    }else{
+      showOv('⚔️',`${answerer} wrong!`,`−${pts} pts · eliminated · ${asker} +${pts} pts`,'lose');
+    }
+  }
+  resetRound();
+  const q=buildQueueFromConfigs('student');
+  if(q.length>0){q[q.length-1].isLastWheel=true;wheelQueue=q;loadNextWheel(false);}
+  updateLMSStatusPanel();
+}
+//last man standing
+function syncLastManStandingUI(){
+  const on=!!studentWheelConfigs.lastManStanding;
+  const chk=document.getElementById('lms-mode-chk');
+  const panel=document.getElementById('lms-mode-panel');
+  if(chk)chk.checked=on;
+  if(panel){
+    panel.classList.toggle('off',!on);
+    panel.style.borderColor=on?'var(--green)':'var(--border)';
+    panel.style.background=on?'var(--green-l)':'var(--card)';
+  }
+  const noBtn=document.getElementById('s-no');
+  if(noBtn&&on&&!studentWheelConfigs.teamVsTeam)noBtn.innerHTML=`✗ Wrong<br><small>−${lmsBattlePts||sScoreCorrect} pts · eliminate</small>`;
+  else if(noBtn&&!studentWheelConfigs.teamVsTeam)updateStudentScoreSettings();
+}
+//last man standing
+function lmsGetBattleWheels(){
+  return studentWheelConfigs.filter(c=>c.enabled&&!isPunishWheel(c));
+}
+//last man standing
+function lmsGetPlayersOnWheel(cfg){
+  if(!cfg)return[];
+  return cfg.items.split('\n').map(s=>s.trim()).filter(Boolean);
+}
+//last man standing
+function lmsGetActivePlayersOnWheel(cfg){
+  return lmsGetPlayersOnWheel(cfg).filter(n=>!lmsEliminated.has(n));
+}
+//last man standing
+function lmsIsWheelFullyEliminated(cfg){
+  const players=lmsGetPlayersOnWheel(cfg);
+  if(!players.length)return false;
+  return players.every(n=>lmsEliminated.has(n));
+}
+//last man standing
+function lmsBuildDualSpinQueue(cfg){
+  const items=lmsGetPlayersOnWheel(cfg);
+  const colors=COLOR_PALETTES[cfg.paletteIdx]||C1;
+  const wQ=buildWheel('lms-q',cfg.title+' — Questioner',items,colors,getWheelStartAngle(cfg,0,items.length));
+  const wA=buildWheel('lms-a',cfg.title+' — Answerer',items,colors,getWheelStartAngle(cfg,1,items.length));
+  wQ.configRef=cfg;wA.configRef=cfg;
+  wQ.soundKey=cfg.soundKey||'kalimba';
+  wA.soundKey=(studentWheelConfigs[1]&&studentWheelConfigs[1].soundKey)||cfg.soundKey||'chime';
+  wQ.narration=cfg.narration||'please ask a question!';
+  wA.narration=(studentWheelConfigs[1]&&studentWheelConfigs[1].narration)||cfg.narration||'please answer!';
+  wQ.wheelVoice=cfg.wheelVoice||'female';
+  wA.wheelVoice=(studentWheelConfigs[1]&&studentWheelConfigs[1].wheelVoice)||cfg.wheelVoice||'male';
+  wQ.isLastWheel=false;
+  wA.isLastWheel=true;
+  wQ.lmsDualSpin=true;
+  wA.lmsDualSpin=true;
+  lmsApplyBlackIndices(wQ);
+  lmsApplyBlackIndices(wA);
+  return[wQ,wA];
+}
+//last man standing
+function lmsGetAllPlayers(){
+  const names=new Set();
+  studentWheelConfigs.filter(c=>c.enabled&&!isPunishWheel(c)).forEach(cfg=>{
+    cfg.items.split('\n').map(s=>s.trim()).filter(Boolean).forEach(n=>names.add(n));
+  });
+  return [...names];
+}
+//last man standing
+function lmsGetActivePlayers(){
+  return lmsGetAllPlayers().filter(n=>!lmsEliminated.has(n));
+}
+//last man standing
+function lmsApplyBlackIndices(w){
+  if(!w||!w.items)return;
+  const black=[];
+  w.items.forEach((item,idx)=>{if(lmsEliminated.has(item))black.push(idx);});
+  w.blackIndices=black;
+}
+//last man standing
+function lmsRefreshQueuedWheels(){
+  wheelQueue.forEach(w=>{lmsApplyBlackIndices(w);if(w.greyIdx>=0&&lmsEliminated.has(w.items[w.greyIdx]))w.greyIdx=-1;});
+  if(activeWheel)lmsApplyBlackIndices(activeWheel);
+  redrawActive();
+}
+//last man standing
+function updateLMSStatusPanel(asker,answerer){
+  const el=document.getElementById('lms-status-text');
+  if(!el)return;
+  const active=lmsGetActivePlayers();
+  let msg=`${active.length} player${active.length===1?'':'s'} remaining`;
+  if(lmsBlockedWheelIds.size>0){
+    const survivor=lmsGetBattleWheels().find(c=>!lmsBlockedWheelIds.has(c.id));
+    const sn=survivor?lmsGetBattleWheels().indexOf(survivor)+1:'?';
+    msg=`Wheel ${sn} only · ${msg}`;
+  }
+  if(lmsIsPunishmentEnabled())msg+=` · 😂 Punish on elimination`;
+  if(asker&&answerer)msg=`Round: <strong>${asker}</strong> asks → <strong>${answerer}</strong> answers · ${msg}`;
+  else if(active.length)msg+=`: ${active.join(', ')}`;
+  el.innerHTML=msg;
+}
+//last man standing
+function playEliminationSound(){
+  try{
+    const ctx=getCtx(),t=ctx.currentTime,dest=out();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='sawtooth';o.frequency.setValueAtTime(220,t);
+    o.frequency.exponentialRampToValueAtTime(55,t+0.45);
+    g.gain.setValueAtTime(0.22,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.52);
+  }catch(e){}
+}
+//last man standing — "Wheel X Eliminated" + challenge line
+function lmsSpeakWheelBlocked(wheelLabel,remainCount){
+  if(!window.speechSynthesis||globalMuted||!narrationOn)return;
+  const wv=(studentWheelConfigs[1]&&studentWheelConfigs[1].wheelVoice)||voiceGender||'female';
+  if(wv==='off')return;
+  const voices=window.speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en'));
+  const pickVoice=(gender)=>{
+    if(gender==='female'){
+      const names=['Samantha','Karen','Moira','Tessa','Victoria','Google UK English Female','Microsoft Zira'];
+      return voices.find(v=>names.some(n=>v.name.includes(n)))||voices.find(v=>v.name.toLowerCase().includes('female'))||voices[0];
+    }
+    const names=['Daniel','Alex','Fred','Google UK English Male','Microsoft David','Microsoft Mark'];
+    return voices.find(v=>names.some(n=>v.name.includes(n)))||voices.find(v=>v.name.toLowerCase().includes('male'))||voices[Math.min(1,voices.length-1)];
+  };
+  window.speechSynthesis.cancel();
+  const u1=new SpeechSynthesisUtterance(wheelLabel+' Eliminated');
+  const u2=new SpeechSynthesisUtterance('You will now challenge against each other until last student standing.');
+  [u1,u2].forEach(u=>{u.volume=1;const v=pickVoice(wv);if(v)u.voice=v;u.rate=wv==='female'?0.92:0.88;u.pitch=wv==='female'?1.15:0.82;});
+  u1.onend=()=>window.speechSynthesis.speak(u2);
+  window.speechSynthesis.speak(u1);
+}
+//last man standing
+function lmsTriggerWheelBlocked(wheelNum,survivorCfg,remainCount){
+  const battle=lmsGetBattleWheels();
+  const survivorNum=survivorCfg?battle.indexOf(survivorCfg)+1:'?';
+  const sub=`${remainCount} player${remainCount===1?'':'s'} remain on Wheel ${survivorNum}.<br><br>You will now challenge against each other until last student standing.`;
+  playEliminationSound();
+  lmsSpeakWheelBlocked('Wheel '+wheelNum,remainCount);
+  showOv('🚫','Wheel '+wheelNum+' Eliminated',sub,'lose');
+  archivedWheels=[];
+  wheelQueue=[];
+  curAsker=null;curAnswerer=null;
+  ['s-ok','s-no'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
+  const btn=document.getElementById('main-spin-btn');
+  if(btn){btn.disabled=true;btn.textContent='Continue ↑';}
+  const hub=document.getElementById('hub-spin-btn');
+  if(hub)hub.disabled=true;
+  updateLMSStatusPanel();
+}
+//last man standing — block wheel when every name on that wheel is eliminated
+function lmsTryBlockExhaustedWheel(){
+  if(!lmsActive)return false;
+  const battle=lmsGetBattleWheels();
+  if(battle.length<2)return false;
+  for(let i=0;i<battle.length;i++){
+    const cfg=battle[i];
+    if(lmsBlockedWheelIds.has(cfg.id))continue;
+    if(!lmsIsWheelFullyEliminated(cfg))continue;
+    const survivor=battle.find(c=>c.id!==cfg.id&&!lmsBlockedWheelIds.has(c.id));
+    if(!survivor)return false;
+    const remain=lmsGetActivePlayersOnWheel(survivor);
+    if(remain.length<2)continue; //last man standing — game ends via winner check, not wheel swap
+    lmsBlockedWheelIds.add(cfg.id);
+    lmsTriggerWheelBlocked(i+1,survivor,remain.length);
+    lmsPendingRebuild=true;
+    return true;
+  }
+  return false;
+}
+//last man standing — voice: "John has been eliminated"
+function lmsSpeakEliminated(name){
+  if(!name||!window.speechSynthesis||globalMuted)return;
+  const wv=(studentWheelConfigs[1]&&studentWheelConfigs[1].wheelVoice)||voiceGender||'female';
+  if(wv==='off'||!narrationOn)return;
+  speakWithGender(name+' has been eliminated',wv);
+}
+//last man standing
+function lmsEliminationFX(name){
+  playEliminationSound();
+  lmsSpeakEliminated(name); //last man standing
+  const outer=document.getElementById('wheel-outer-wrap');
+  if(outer){outer.classList.add('lms-elim-shake','lms-elim-flash');setTimeout(()=>outer.classList.remove('lms-elim-shake','lms-elim-flash'),650);}
+  updateLMSStatusPanel();
+}
+//last man standing
+function lmsEliminatePlayer(name){
+  if(!name||lmsEliminated.has(name))return;
+  lmsEliminated.add(name);
+  lmsEliminationFX(name);
+  lmsRefreshQueuedWheels();
+  updateSSB();
+}
+//last man standing
+function lmsMarkAnswer(ok){
+  rounds++;document.getElementById('s-r').textContent=rounds;
+  const answerer=curAnswerer||archivedWheels[1]?.result||'—';
+  const asker=curAsker||archivedWheels[0]?.result||'—';
+  const pts=lmsBattlePts||sScoreCorrect;
+  document.getElementById('s-ok').disabled=true;
+  document.getElementById('s-no').disabled=true;
+  if(ok){
+    correct++;document.getElementById('s-c').textContent=correct;
+    if(scores[answerer]!==undefined)scores[answerer]=(scores[answerer]||0)+pts;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Correct (LMS)',points:pts});
+    updateSSB();
+    lmsEliminatePlayer(asker);
+    lmsAfterEliminationThenContinue(asker,true,asker,answerer,pts); //last man standing — optional punish spin
+  }else{
+    wrongs++;
+    if(scores[answerer]!==undefined)scores[answerer]=(scores[answerer]||0)-pts;
+    if(scores[asker]!==undefined)scores[asker]=(scores[asker]||0)+pts;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong (LMS)',points:-pts});
+    updateSSB();
+    lmsEliminatePlayer(answerer);
+    lmsAfterEliminationThenContinue(answerer,false,asker,answerer,pts); //last man standing — optional punish spin
+  }
+}
+//last man standing
+function lmsEnsureWheel2ExcludesAsker(askerName){
+  if(!askerName||!wheelQueue.length)return;
+  const w2=wheelQueue[0];
+  const gi=w2.items.indexOf(askerName);
+  if(gi>=0)w2.greyIdx=gi;
+}
+
+/* ══ TEAM VS TEAM (student mode — reuses LMS battle helpers) ═══════ */
+//team vs team
+function tvvTeamDisplay(teamIdx){
+  const battle=lmsGetBattleWheels();
+  const cfg=battle[teamIdx];
+  if(!cfg)return teamIdx===0?'Team A':'Team B';
+  const t=(cfg.title||'').trim();
+  return t||(teamIdx===0?'Team A':'Team B');
+}
+//team vs team
+function tvvGetTeamKey(teamIdx){
+  return tvvTeamDisplay(teamIdx);
+}
+//team vs team
+function tvvTeamHasActivePlayers(teamIdx){
+  const battle=lmsGetBattleWheels();
+  const cfg=battle[teamIdx];
+  if(!cfg)return false;
+  return lmsGetPlayersOnWheel(cfg).some(n=>!lmsEliminated.has(n));
+}
+//team vs team
+function tvvIsGameComplete(){
+  if(!tvvActive)return false;
+  const battle=lmsGetBattleWheels();
+  if(battle.length<2)return false;
+  return !tvvTeamHasActivePlayers(0)||!tvvTeamHasActivePlayers(1);
+}
+//team vs team
+function tvvGetWinningTeamIdx(){
+  if(tvvTeamHasActivePlayers(0)&&!tvvTeamHasActivePlayers(1))return 0;
+  if(!tvvTeamHasActivePlayers(0)&&tvvTeamHasActivePlayers(1))return 1;
+  return tvvTeamHasActivePlayers(0)?0:1;
+}
+//team vs team — odd rounds: Team A asks first; even rounds: Team B asks first
+function tvvBuildRoundQueue(){
+  const battle=lmsGetBattleWheels();
+  if(battle.length<2)return[];
+  const teamA=battle[0],teamB=battle[1];
+  const askerFirst=(tvvRoundNum%2===1);
+  const askerCfg=askerFirst?teamA:teamB;
+  const answererCfg=askerFirst?teamB:teamA;
+  const askerTeamIdx=askerFirst?0:1;
+  const answererTeamIdx=askerFirst?1:0;
+  const mk=(cfg,role,teamIdx,qIdx,isLast)=>{
+    const items=lmsGetPlayersOnWheel(cfg);
+    const colors=COLOR_PALETTES[cfg.paletteIdx]||C1;
+    const w=buildWheel('tvv-'+role+'-'+qIdx,cfg.title,items,colors,getWheelStartAngle(cfg,qIdx,items.length));
+    w.configRef=cfg;
+    w.soundKey=cfg.soundKey||'kalimba';
+    w.narration=role==='asker'?'please ask a question!':'please answer!'; // always role-based in TVV — cfg.narration is position-fixed and would mismatch when teams swap roles
+    w.wheelVoice=cfg.wheelVoice||'female';
+    w.isLastWheel=isLast;
+    w.tvvRole=role;
+    w.tvvTeamIdx=teamIdx;
+    lmsApplyBlackIndices(w);
+    return w;
+  };
+  return[
+    mk(askerCfg,'asker',askerTeamIdx,0,false),
+    mk(answererCfg,'answerer',answererTeamIdx,1,true)
+  ];
+}
+//team vs team
+function updateTVVStatusPanel(asker,answerer){
+  const el=document.getElementById('tvv-status-text');
+  if(!el)return;
+  const battle=lmsGetBattleWheels();
+  const aLeft=lmsGetActivePlayersOnWheel(battle[0]).length;
+  const bLeft=lmsGetActivePlayersOnWheel(battle[1]).length;
+  const askFirst=(tvvRoundNum%2===1);
+  let msg=`Round ${tvvRoundNum} · ${tvvTeamDisplay(0)}: ${aLeft} left · ${tvvTeamDisplay(1)}: ${bLeft} left`;
+  msg+=` · Next asker: ${askFirst?tvvTeamDisplay(0):tvvTeamDisplay(1)}`;
+  if(lmsIsPunishmentEnabled())msg+=' · 😂 Punish on elimination';
+  if(asker&&answerer)msg=`<strong>${asker}</strong> (${tvvTeamDisplay(curAskerTeamIdx)}) asks → <strong>${answerer}</strong> (${tvvTeamDisplay(curAnswererTeamIdx)}) answers · ${msg}`;
+  el.innerHTML=msg;
+}
+//team vs team
+function tvvShowWinner(){
+  const winIdx=tvvGetWinningTeamIdx();
+  const winName=tvvGetTeamKey(winIdx);
+  studentQuizEnded=true;
+  pendingAdvanceWheel=false;
+  archivedWheels=[];
+  wheelQueue=[];
+  playWinSound();
+  launchConfetti();
+  setStudentQuizCompleteUI();
+  showOv('🏆','Team vs Team!',`${winName} wins with ${scores[winName]||0} pts!`,'win');
+}
+//team vs team
+function tvvFinishRound(ok,asker,answerer,pts,skipOutcomeOverlay){
+  if(isStudentQuizComplete()){
+    tvvShowWinner();
+    return;
+  }
+  if(!skipOutcomeOverlay){
+    const at=tvvTeamDisplay(curAskerTeamIdx);
+    const ant=tvvTeamDisplay(curAnswererTeamIdx);
+    if(ok){
+      playWinSound(); launchConfetti();
+      showOv('🎉',`${ant} correct!`,`+${pts} pts for ${ant}`,'win');
+    }else{
+      showOv('⚔️',`${answerer} eliminated!`,`+${pts} pts for ${at}`,'lose');
+    }
+  }
+  tvvRoundNum++;
+  resetRound();
+  const q=tvvBuildRoundQueue();
+  if(q.length>0){wheelQueue=q;loadNextWheel(false);}
+  updateTVVStatusPanel();
+}
+//team vs team
+function tvvAfterEliminationThenContinue(eliminatedName,asker,answerer,pts){
+  const proceedAfterPunish=()=>tvvFinishRound(false,asker,answerer,pts,true);
+  const proceedNoPunish=()=>tvvFinishRound(false,asker,answerer,pts,false);
+  if(lmsIsPunishmentEnabled()){
+    if(lmsStartPunishmentSpin(eliminatedName,proceedAfterPunish))return;
+  }
+  proceedNoPunish();
+}
+//team vs team
+function tvvMarkAnswer(ok){
+  rounds++;document.getElementById('s-r').textContent=rounds;
+  const answerer=curAnswerer||archivedWheels[1]?.result||'—';
+  const asker=curAsker||archivedWheels[0]?.result||'—';
+  const pts=lmsBattlePts||sScoreCorrect;
+  const askerTeam=tvvGetTeamKey(curAskerTeamIdx);
+  const answererTeam=tvvGetTeamKey(curAnswererTeamIdx);
+  document.getElementById('s-ok').disabled=true;
+  document.getElementById('s-no').disabled=true;
+  if(ok){
+    correct++;document.getElementById('s-c').textContent=correct;
+    if(scores[answererTeam]!==undefined)scores[answererTeam]=(scores[answererTeam]||0)+pts;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Correct (TVV)',points:pts});
+    updateSSB();
+    updateTVVStatusPanel(asker,answerer);
+    tvvFinishRound(true,asker,answerer,pts,false);
+  }else{
+    wrongs++;
+    if(scores[askerTeam]!==undefined)scores[askerTeam]=(scores[askerTeam]||0)+pts;
+    sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong (TVV)',points:pts});
+    updateSSB();
+    lmsEliminatePlayer(answerer);
+    if(isStudentQuizComplete()){
+      tvvShowWinner();
+      return;
+    }
+    tvvAfterEliminationThenContinue(answerer,asker,answerer,pts);
+  }
+}
 
 /* ══ ELIMINATE SPIN BEFORE ══════════════════════════════════════
    toggleEliminateSpinBefore — flips cfg.eliminateSpinBefore and
@@ -2129,10 +2945,11 @@ function toggleEliminateSpinBefore(m, idx) {
 
 /* ══ INIT ════════════════════════════════════════════════════════ */
 function buildWheel(key,title,items,colors,startAngle=0){
-  return{key,title,items:Array.isArray(items)?items:items.split('\n').map(s=>s.trim()).filter(Boolean),colors,angle:startAngle,spinning:false,greyIdx:-1,isLastWheel:false,configRef:null};
+  return{key,title,items:Array.isArray(items)?items:items.split('\n').map(s=>s.trim()).filter(Boolean),colors,angle:startAngle,spinning:false,greyIdx:-1,greyIndices:[],blackIndices:[],isLastWheel:false,configRef:null}; //last man standing: blackIndices
 }
 
 initWheelConfigs();
+syncStudentBattleModeUI(); //last man standing + team vs team
 updateScoreSettings();
 switchMode('teacher');
 // Load voices async
