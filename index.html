@@ -3258,7 +3258,7 @@ function copyScore() {
 function shareScore() {
   const msg = buildScoreMessage();
   if (navigator.share) {
-    navigator.share({ title: 'My WheelQuiz Score', text: msg, url: 'https://www.WheelQuiz.com' }).catch(()=>{});
+    navigator.share({ title: 'My WheelQuiz Score', text: msg, url: '' }).catch(()=>{});
   } else {
     copyScore();
   }
@@ -3268,7 +3268,7 @@ function shareScore() {
 <div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem">
   <div style="max-width:800px;margin:0 auto">
     <h2 style="font-family:var(--font);font-size:22px;font-weight:900;margin-bottom:6px;color:var(--text)">Frequently asked questions</h2>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem">Everything you need to know about WheelQuiz — the free classroom spin wheel with scoring, reports and voice narration.</p>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem">🎯WheelQuiz is a free interactive spin wheel quiz game featuring live scoring, voice narration, custom questions, survival battles, team vs team gameplay, and classroom-friendly multiplayer fun suitable for teachers, students and all ages.</p>
 
     <div style="display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap">
       <button id="faq-t-btn" onclick="showFaq('t')"
