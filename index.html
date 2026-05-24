@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SpinPick — Smart Classroom Wheel for Teachers & Students</title>
+<title>WheelQuiz — Smart Classroom Wheel for Teachers & Students</title>
 <meta name="description" content="Free classroom spin wheel with scoring, reports and voice narration. Teacher and student modes.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -25,8 +25,8 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
   padding:0 1.5rem;height:54px;display:flex;align-items:center;gap:12px;
   position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,0.06);
 }
-.logo{font-family:var(--font);font-size:22px;font-weight:900;color:var(--text);letter-spacing:-0.5px;text-decoration:none}
-.logo span{color:#E53935}
+.logo{font-family:var(--font);font-size:22px;font-weight:900;color:var(--blue);letter-spacing:-0.5px;text-decoration:none}
+.logo span{color:var(--green)}
 .mode-toggle{display:flex;gap:4px;background:var(--bg);border-radius:30px;padding:4px;border:1px solid var(--border)}
 .mode-toggle button{
   padding:5px 14px;border-radius:24px;border:none;font-size:12px;font-weight:700;
@@ -299,13 +299,64 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
   .right-panel{max-height:none}
   .left-panel{min-height:auto}
 }
+
+/* ══ AUTO ANSWER MCQ — overlay & button styles ══════════════════ */
+.mcq-ov{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(10,14,30,0.82);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;
+}
+.mcq-ov.show{display:flex;}
+.mcq-ov-card{
+  background:#fff;border-radius:20px;padding:2rem 2rem 1.5rem;
+  max-width:520px;width:92%;box-shadow:0 12px 48px rgba(0,0,0,0.28);
+  text-align:center;border-top:5px solid var(--blue);
+}
+.mcq-ov-student{
+  font-size:12px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;
+}
+.mcq-ov-question{
+  font-family:var(--font);font-size:18px;font-weight:800;
+  color:var(--text);line-height:1.4;margin-bottom:1.2rem;
+}
+.mcq-ov-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;
+}
+.mcq-choice-btn{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border-radius:12px;border:2px solid var(--border);
+  background:var(--bg);cursor:pointer;text-align:left;
+  font-family:var(--fontb);transition:all 0.14s;
+}
+.mcq-choice-btn:hover:not(:disabled){
+  border-color:var(--blue);background:var(--blue-l);transform:translateY(-1px);
+}
+.mcq-choice-label{
+  width:28px;height:28px;border-radius:50%;background:var(--blue);
+  color:#fff;font-weight:800;font-size:13px;font-family:var(--font);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.mcq-choice-text{font-size:14px;font-weight:700;color:var(--text);}
+.mcq-choice-disabled{opacity:0.55;cursor:not-allowed;}
+.mcq-choice-correct{border-color:#2E7D32!important;background:#E8F5E9!important;}
+.mcq-choice-correct .mcq-choice-label{background:#2E7D32;}
+.mcq-choice-wrong{border-color:#C62828!important;background:#FFEBEE!important;}
+.mcq-choice-wrong .mcq-choice-label{background:#C62828;}
+.mcq-choice-reveal{border-color:#2E7D32!important;background:#E8F5E9!important;opacity:1!important;}
+.mcq-choice-reveal .mcq-choice-label{background:#2E7D32;}
+.mcq-ov-result{
+  font-size:18px;font-weight:800;font-family:var(--font);
+  margin-top:8px;display:none;
+}
+/* ══ END AUTO ANSWER MCQ ══════════════════════════════════════════ */
 </style>
 </head>
 <body>
 <div id="cf"></div>
 
 <div class="topbar">
-  <span class="logo">Spin<span>Pick</span></span>
+  <span class="logo">Wheel<span>Quiz</span></span>
   <div class="mode-toggle">
     <button id="btn-t" class="active-t" onclick="switchMode('teacher')">👨‍🏫 Teacher</button>
     <button id="btn-s" onclick="switchMode('student')">👨‍🎓 Student</button>
@@ -479,9 +530,19 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
   </div>
 </div>
 
+<!-- AUTO ANSWER MCQ — MCQ full-screen overlay -->
+<div class="mcq-ov" id="mcq-ov">
+  <div class="mcq-ov-card">
+    <div class="mcq-ov-student" id="mcq-ov-student"></div>
+    <div class="mcq-ov-question" id="mcq-ov-question"></div>
+    <div class="mcq-ov-grid" id="mcq-ov-grid"></div>
+    <div class="mcq-ov-result" id="mcq-ov-result"></div>
+  </div>
+</div>
+
 <script>
 /* ══════════════════════════════════════════════════════════════════
-   SPINPICK — Full engine
+   WheelQuiz — Full engine
    Mode: teacher | student
    Sequential wheels: active wheel → archive on complete
 ══════════════════════════════════════════════════════════════════ */
@@ -1189,7 +1250,10 @@ let teacherWheelConfigs = [];
 let studentWheelConfigs = [];
 
 const T_DEFAULTS = [
-{ title:'❓ Teacher Questions', items:'Question 1: Which animal says “meow”? a) Dog. b) Cat. c) Cow. d) Duck.\nQuestion 2: Which animal is known for having a long trunk? a) Lion. b) Elephant. c) Monkey. d) Rabbit.\nQuestion 3: Which animal can fly in the sky? a) Fish. b) Tiger. c) Bird. d) Horse.\nQuestion 4: Which animal lives in water and has fins? a) Fish. b) Bear. c) Zebra. d) Kangaroo.\nQuestion 5: Which animal is very tall with a long neck? a) Giraffe. b) Panda. c) Dog. d) Goat.\nQuestion 6: Which animal likes to eat bamboo? a) Panda. b) Lion. c) Crocodile. d) Fox.\nQuestion 7: Which animal says “woof”? a) Cat. b) Duck. c) Dog. d) Cow.\nQuestion 8: Which animal hops and carries babies in a pouch? a) Kangaroo. b) Tiger. c) Sheep. d) Camel.\nQuestion 9: Which animal is called the king of the jungle? a) Rabbit. b) Lion. c) Deer. d) Pig.\nQuestion 10: Which animal has black and white stripes? a) Zebra. b) Panda. c) Rhino. d) Camel.', paletteIdx:0, soundKey:'kalimba', narration:'Please answer', wheelVoice:'female', enabled:true, askedQuestions:new Set(), eliminateSpinBefore:true },
+{ title:'❓ Teacher Questions', items:'Question 1: Which animal says “meow”? a) Dog. b) Cat. c) Cow. d) Duck.\nQuestion 2: Which animal is known for having a long trunk? a) Lion. b) Elephant. c) Monkey. d) Rabbit.\nQuestion 3: Which animal can fly in the sky? a) Fish. b) Tiger. c) Bird. d) Horse.\nQuestion 4: Which animal lives in water and has fins? a) Fish. b) Bear. c) Zebra. d) Kangaroo.\nQuestion 5: Which animal is very tall with a long neck? a) Giraffe. b) Panda. c) Dog. d) Goat.\nQuestion 6: Which animal likes to eat bamboo? a) Panda. b) Lion. c) Crocodile. d) Fox.\nQuestion 7: Which animal says “woof”? a) Cat. b) Duck. c) Dog. d) Cow.\nQuestion 8: Which animal hops and carries babies in a pouch? a) Kangaroo. b) Tiger. c) Sheep. d) Camel.\nQuestion 9: Which animal is called the king of the jungle? a) Rabbit. b) Lion. c) Deer. d) Pig.\nQuestion 10: Which animal has black and white stripes? a) Zebra. b) Panda. c) Rhino. d) Camel.', paletteIdx:0, soundKey:'kalimba', narration:'Please answer', wheelVoice:'female', enabled:true,
+  //AUTO ANSWER MCQ — answer key: one correct answer label per line, matching each question line above
+  answers:'b) Cat\nb) Elephant\nc) Bird\na) Fish\na) Giraffe\na) Panda\nc) Dog\na) Kangaroo\nb) Lion\na) Zebra',
+  askedQuestions:new Set(), eliminateSpinBefore:true },
 
   { title:'👥 Student Answer', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true },
   { title:'😂 Student Punishments', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
@@ -1291,6 +1355,20 @@ function renderWheelConfigs(m) {
           onfocus="this.style.borderColor='var(--blue)';this.style.background='var(--card)'"
           onblur="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
         >${cfg.items}</textarea>
+
+        ${m==='teacher'&&idx===0?`
+        <!-- AUTO ANSWER MCQ — Answer Key textarea for Teacher Wheel 1 -->
+        <div style="margin-top:8px">
+          <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">🔑 Answer Key (one correct answer per line, matches question order above)</div>
+          <textarea id="mcq-answers-${m}-${idx}"
+            style="width:100%;border:1.5px solid var(--blue);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fontb);background:var(--bg);color:var(--text);resize:vertical;min-height:60px;outline:none"
+            placeholder="e.g.&#10;B&#10;C&#10;A&#10;(or: b) Tokyo, 1.B, b) Cat — any format)"
+            oninput="updateConfigAnswers('${m}',${idx},this.value)"
+            onfocus="this.style.borderColor='var(--blue)';this.style.background='var(--card)'"
+            onblur="this.style.borderColor='var(--blue)';this.style.background='var(--bg)'"
+          >${cfg.answers||''}</textarea>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Line 1 = answer to Question 1, Line 2 = Q2, etc. Just the letter is enough: <em>B</em> or <em>1.B</em> or <em>b) Tokyo</em> — all work.</div>
+        </div>` : ''}
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
           <div>
@@ -1421,6 +1499,12 @@ function renderWheelConfigBadge(m, idx) { /* no-op — badge updated in-place */
 function renderWheelConfigBadge(m, idx) {
   // Lightweight update — just re-render that one config
   renderWheelConfigs(m);
+}
+
+//AUTO ANSWER MCQ — persist answer key changes from the Answer Key textarea
+function updateConfigAnswers(m, idx, val) {
+  const configs = getConfigs(m);
+  if (configs[idx]) configs[idx].answers = val;
 }
 
 function updateConfigItems(m, idx, val) {
@@ -1736,11 +1820,21 @@ function startTeacher() {
   const _rp=document.getElementById('main-result');if(_rp){_rp.textContent='Spin to begin';_rp.classList.remove('flash');}
   const _sb=document.getElementById('main-spin-btn');if(_sb){_sb.disabled=false;_sb.textContent='⟳ Spin';}
   const _hb=document.getElementById('hub-spin-btn');if(_hb){_hb.disabled=false;_hb.textContent='⟳';}
-  // Only the LAST wheel's items go on the scoreboard (groups/answerers)
-  const lastW = queue[queue.length-1];
-  lastW.items.forEach(item => { scores[item]=0; scoreboardNames.add(item); });
-  // Non-last wheels still need score entries if they score (e.g. single-wheel mode)
-  if (queue.length === 1) queue[0].items.forEach(item => { if(!scores[item]) scores[item]=0; scoreboardNames.add(item); });
+  // Determine which wheel holds answerer/group names for scoring.
+  // If only 1 wheel (questions only) OR the last non-punish wheel is the question wheel,
+  // register a single "Class Score" entry instead of question texts as player names.
+  const nonPunishQ = queue.filter(w => !isPunishWheel(w));
+  const answererWheel = nonPunishQ.length >= 2 ? nonPunishQ[nonPunishQ.length - 1] : null;
+  if (answererWheel) {
+    // Normal multi-wheel: last non-punish wheel has the answerer names
+    answererWheel.items.forEach(item => { scores[item]=0; scoreboardNames.add(item); });
+  } else {
+    // Single-wheel or questions+punishment only: use a single "Class Score" tracker
+    const sessionName = '📊 Class Score';
+    scores[sessionName] = 0;
+    scoreboardNames.add(sessionName);
+  }
+  // Always tag the very last wheel in the queue as isLastWheel (punishment or answerer)
   clearArchive();
   // Tag last wheel
   queue[queue.length-1].isLastWheel = true;
@@ -1893,12 +1987,10 @@ function onWheelResult(key, winner) {
         const q = buildQueueFromConfigs('teacher');
         if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
       } else {
-        // Normal teacher last wheel — enable correct/wrong
-        showOv('🎯', 'Ready to answer!', allResults + '\n\nMark the answer above ↑', 'info');
-        document.getElementById('t-ok').disabled = false;
-        document.getElementById('t-no').disabled = false;
-        document.getElementById('main-spin-btn').disabled = true;
-        document.getElementById('main-spin-btn').textContent = 'Mark answer ↑';
+        // Normal teacher last wheel — AUTO ANSWER MCQ: show MCQ choices if available, else manual
+        // In single-wheel mode curGroup is null — use "Class" as the group label
+        const groupLabel = curGroup || (scoreboardNames.has('📊 Class Score') ? 'Class' : curGroup);
+        showMCQOverlay(curTopic, groupLabel);
       }
 
     } else {
@@ -1979,18 +2071,20 @@ function tMark(ok) {
   rounds++; document.getElementById('t-r').textContent=rounds;
   const topic = archivedWheels[0]?.result || curAsker || '—';
   const group  = archivedWheels[1]?.result || curAnswerer || '—';
+  // Single-wheel mode: score against the session tracker instead of a missing group name
+  const scoreKey = (scores[group] !== undefined) ? group : (scoreboardNames.has('📊 Class Score') ? '📊 Class Score' : group);
   const quizDone=isTeacherQuizComplete();
   if (!topicS[topic]) topicS[topic]={c:0,w:0};
   if (ok) {
     correct++; document.getElementById('t-c').textContent=correct;
-    if (scores[group]!==undefined) scores[group]=(scores[group]||0)+scoreCorrect;
+    if (scores[scoreKey]!==undefined) scores[scoreKey]=(scores[scoreKey]||0)+scoreCorrect;
     topicS[topic].c++;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Correct',points:scoreCorrect});
     if(!quizDone){playWinSound();launchConfetti();}
     else playWinSound();
   } else {
     wrongs++; document.getElementById('t-w').textContent=wrongs;
-    if (scores[group]!==undefined) scores[group]=(scores[group]||0)+scoreWrong;
+    if (scores[scoreKey]!==undefined) scores[scoreKey]=(scores[scoreKey]||0)+scoreWrong;
     topicS[topic].w++;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker:topic,answerer:group,result:'Wrong',points:scoreWrong});
     if(!quizDone){playLoseSound();}
@@ -2019,9 +2113,9 @@ function tMark(ok) {
       return;
     }
     // No punishment wheel — show incorrect overlay then continue
-    showOv('😢','Incorrect!',`${group} — ${scoreWrong > 0 ? '+' : ''}${scoreWrong} points this round`,'lose');
+    showOv('😢','Incorrect!',`${scoreWrong > 0 ? '+' : ''}${scoreWrong} points this round`,'lose');
   } else {
-    showOv('🎉', `${group} correct!`, `+${scoreCorrect} points! 🏆`, 'win');
+    showOv('🎉', 'Correct!', `+${scoreCorrect} points! 🏆`, 'win');
     launchConfetti();
   }
   resetRound();
@@ -2149,7 +2243,15 @@ function updateTSB(){
     return;
   }
   const max = Math.max(...entries.map(e=>e[1]), 10);
-  document.getElementById('t-sb').innerHTML = entries
+  // Session % summary line (shown in all modes; especially useful in single-wheel)
+  const totalQ = rounds;
+  const pct = totalQ > 0 ? Math.round(correct / totalQ * 100) : 0;
+  const summaryLine = totalQ > 0
+    ? `<div style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;padding:4px 0 6px;border-bottom:1px solid var(--border);margin-bottom:6px">
+        ${correct}/${totalQ} correct &nbsp;·&nbsp;
+        <span style="color:${pct>=70?'#2E7D32':pct>=40?'#E65100':'#C62828'}">${pct}%</span>
+       </div>` : '';
+  document.getElementById('t-sb').innerHTML = summaryLine + entries
     .map(([n,p],i)=>`<div class="score-row">
       <span class="score-name">${i===0&&p>0?'🥇 ':''}${n}</span>
       <div class="score-bar-bg"><div class="score-bar" style="width:${Math.round(p/max*100)}%;background:${SBC[i%SBC.length]}"></div></div>
@@ -2296,7 +2398,7 @@ function closeReport(){document.getElementById('report-modal').classList.remove(
 
 /* ══ DOWNLOADS ══════════════════════════════════════════════════ */
 function downloadPDF(m){
-  const title=m==='teacher'?(document.getElementById('t-cn')?.value||'SpinPick'):'SpinPick Study';
+  const title=m==='teacher'?(document.getElementById('t-cn')?.value||'WheelQuiz'):'WheelQuiz Study';
   const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
   const acc=rounds?Math.round(correct/rounds*100):0;
   let html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:28px;color:#1A1D2E;max-width:680px}h1{font-size:20px;color:#1565C0;border-bottom:3px solid #1565C0;padding-bottom:6px}h2{font-size:14px;margin:18px 0 6px;color:#374151}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#1565C0;color:#fff;padding:7px 8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #E4E7EF}tr:nth-child(even)td{background:#F7F8FC}.footer{margin-top:24px;font-size:10px;color:#9CA3AF;border-top:1px solid #E4E7EF;padding-top:8px}</style></head><body>
@@ -2318,13 +2420,13 @@ function downloadPDF(m){
     sessionLog.forEach(r=>html+=`<tr><td>${r.time}</td><td>${r.round}</td><td>${r.asker}</td><td>${r.answerer}</td><td>${r.result}</td><td>${r.points}</td></tr>`);
     html+=`</table>`;
   }
-  html+=`<div class="footer">Generated by SpinPick</div></body></html>`;
+  html+=`<div class="footer">Generated by WheelQuiz</div></body></html>`;
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);}
 }
 
 function downloadCSV(m){
-  const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'SpinPick'):'SpinPick_Study').replace(/[^a-z0-9]/gi,'_');
-  let csv=`SPINPICK REPORT\r\nDate,${sessionDate}\r\nRounds,${rounds}\r\nCorrect,${correct}\r\nWrong,${wrongs}\r\nAccuracy,${rounds?Math.round(correct/rounds*100):0}%\r\n\r\nSCOREBOARD\r\nRank,Name,Points${m==='student'?',Punishments':''}\r\n`;
+  const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'WheelQuiz'):'WheelQuiz_Study').replace(/[^a-z0-9]/gi,'_');
+  let csv=`WheelQuiz REPORT\r\nDate,${sessionDate}\r\nRounds,${rounds}\r\nCorrect,${correct}\r\nWrong,${wrongs}\r\nAccuracy,${rounds?Math.round(correct/rounds*100):0}%\r\n\r\nSCOREBOARD\r\nRank,Name,Points${m==='student'?',Punishments':''}\r\n`;
   Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>csv+=`${i+1},${n},${p}${m==='student'?','+(punishCt[n]||0):''}\r\n`);
   if(m==='teacher'&&Object.keys(topicS).length){
     csv+=`\r\nTOPIC PERFORMANCE\r\nTopic,Correct,Wrong,Accuracy\r\n`;
@@ -2336,11 +2438,11 @@ function downloadCSV(m){
 }
 
 function downloadLog(m){
-  const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'SpinPick'):'SpinPick_Study').replace(/[^a-z0-9]/gi,'_');
-  let log=`=== SPINPICK SESSION LOG ===\nDate: ${sessionDate}\nMode: ${m}\nRounds: ${rounds} | Correct: ${correct} | Wrong: ${wrongs}\nAccuracy: ${rounds?Math.round(correct/rounds*100):0}%\n\n--- SCORES ---\n`;
+  const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'WheelQuiz'):'WheelQuiz_Study').replace(/[^a-z0-9]/gi,'_');
+  let log=`=== WheelQuiz SESSION LOG ===\nDate: ${sessionDate}\nMode: ${m}\nRounds: ${rounds} | Correct: ${correct} | Wrong: ${wrongs}\nAccuracy: ${rounds?Math.round(correct/rounds*100):0}%\n\n--- SCORES ---\n`;
   Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>log+=`  ${i+1}. ${n.padEnd(16)} ${p}pts${m==='student'&&punishCt[n]?' ('+punishCt[n]+' punishments)':''}\n`);
   if(sessionLog.length){log+=`\n--- ROUND LOG ---\n`;sessionLog.forEach(r=>log+=`[${r.time}] R${r.round}: ${r.asker} → ${r.answerer} | ${r.result} | ${r.points>0?'+':''}${r.points}pts\n`);}
-  log+=`\n=== END ===\nGenerated by SpinPick\n`;
+  log+=`\n=== END ===\nGenerated by WheelQuiz\n`;
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([log],{type:'text/plain'}));
   a.download=`${title}_${new Date().toISOString().slice(0,10)}.log`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 }
@@ -2954,11 +3056,144 @@ updateScoreSettings();
 switchMode('teacher');
 // Load voices async
 if(window.speechSynthesis)window.speechSynthesis.onvoiceschanged=()=>{};
+
+/* ══ AUTO ANSWER MCQ ══════════════════════════════════════════════
+   showMCQOverlay(topic, group)
+   - Parses the current question (topic) for a) b) c) d) options
+   - Reads the answer key from teacherWheelConfigs[0].answers
+   - Shows full-screen MCQ overlay with choice buttons
+   - On click: speaks "Correct"/"Wrong", calls tMark(), resumes normal flow
+   - Falls back to manual ✓/✗ if question has no MCQ options
+══════════════════════════════════════════════════════════════════ */
+function showMCQOverlay(topic, group) {
+  //AUTO ANSWER MCQ — FIX: parse options supporting a) b) c) d), A. B. C. D., or A) B) C) D) formats
+  // Handles user-typed questions like "A. Seoul. B. Tokyo." as well as "a) Seoul"
+  const questionText = (topic || '');
+
+  // Try to split on any of: "A." / "A)" / "a)" followed by a space or letter, for A-D
+  // Uses a lookahead that matches: word boundary + [A-Da-d] + [.)]\s  or  \s[A-Da-d][.)]
+  const parts = questionText.split(/(?=\s[A-Da-d][.)]\s?|\b[A-Da-d]\)\s)/);
+  // parts[0] = question stem, parts[1..n] = option chunks
+  const options = parts.slice(1).map(p => {
+    // Match label: a) or A. or A) at start of chunk (possibly preceded by a space)
+    const m = p.match(/^\s*([A-Da-d])[.)]\s*(.*)/s);
+    if (!m) return null;
+    const label = m[1].toLowerCase() + ')'; // normalise to "a)" always
+    const text  = m[2].replace(/\s*[A-Da-d][.)]\s.*$/s,'').replace(/\.?\s*$/, '').trim();
+    return { label, text, full: label + ' ' + text };
+  }).filter(o => o && o.label && o.text);
+
+  // If no MCQ options found — fall back to manual mark
+  if (options.length === 0) {
+    showOv('🎯', 'Ready to answer!', (topic||'') + '\n\n' + (group||'') + ' — Mark the answer above ↑', 'info');
+    document.getElementById('t-ok').disabled = false;
+    document.getElementById('t-no').disabled = false;
+    document.getElementById('main-spin-btn').disabled = true;
+    document.getElementById('main-spin-btn').textContent = 'Mark answer ↑';
+    return;
+  }
+
+  // Look up correct answer from the answer key
+  // teacherWheelConfigs[0].answers: one answer per line matching question order
+  const t1cfg = teacherWheelConfigs[0];
+  const answerLines = (t1cfg && t1cfg.answers ? t1cfg.answers : '').split('\n').map(s => s.trim());
+  const allQuestions = (t1cfg ? t1cfg.items : '').split('\n').map(s => s.trim()).filter(Boolean);
+  const qIdx = allQuestions.indexOf(topic); // match question by exact text
+  // correctRaw: raw line e.g. "B", "1.B", "b)", "b) Tokyo" — extract just the letter below
+  const correctRaw = (qIdx >= 0 && answerLines[qIdx]) ? answerLines[qIdx] : null;
+  // Extract just the answer letter (a-d) from whatever format the teacher typed
+  // Handles: "B", "b", "1.B", "2. B", "b)", "b) Tokyo", "B. Tokyo"
+  const correctLetter = correctRaw
+    ? ((correctRaw.match(/[A-Da-d]/) || [])[0] || '').toLowerCase()
+    : null;
+
+  // Build the MCQ overlay
+  const ovEl = document.getElementById('mcq-ov');
+  if (!ovEl) return;
+
+  // Extract clean question stem (before the first option — supports "a)" and "A." formats)
+  const stemMatch = (topic||'').match(/^(.*?)(?=\s+[A-Da-d][.)]\s)/is);
+  const stem = stemMatch ? stemMatch[1].trim() : topic;
+
+  document.getElementById('mcq-ov-question').textContent = stem;
+  document.getElementById('mcq-ov-student').textContent = '👤 ' + (group || '—') + ' is answering';
+
+  const grid = document.getElementById('mcq-ov-grid');
+  grid.innerHTML = '';
+
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'mcq-choice-btn';
+    btn.innerHTML = '<span class="mcq-choice-label">' + opt.label.toUpperCase().replace(')','') + '</span>' +
+                    '<span class="mcq-choice-text">' + opt.text + '</span>';
+
+    btn.onclick = function() {
+      // Determine correct/wrong using the extracted letter
+      let isCorrect = false;
+      if (correctLetter) {
+        const oLabel = opt.label.replace(')','').trim().toLowerCase(); // "b"
+        isCorrect = (correctLetter === oLabel);
+      }
+
+      // Disable all buttons, highlight chosen and correct
+      grid.querySelectorAll('.mcq-choice-btn').forEach(b => {
+        b.disabled = true;
+        b.classList.add('mcq-choice-disabled');
+      });
+      btn.classList.add(isCorrect ? 'mcq-choice-correct' : 'mcq-choice-wrong');
+
+      // If wrong, also highlight the correct answer button
+      if (!isCorrect && correctLetter) {
+        grid.querySelectorAll('.mcq-choice-btn').forEach(b => {
+          const bLabel = b.querySelector('.mcq-choice-label')?.textContent?.trim().toLowerCase();
+          if (bLabel === correctLetter) b.classList.add('mcq-choice-reveal');
+        });
+      }
+
+      // Show result message inside overlay
+      const resEl = document.getElementById('mcq-ov-result');
+      if (isCorrect) {
+        resEl.textContent = '🎉 Correct!';
+        resEl.style.color = '#2E7D32';
+        if (!globalMuted) speakWithGender('Correct', activeWheel?.wheelVoice || 'female');
+        playWinSound(); launchConfetti();
+      } else {
+        const correctOpt = options.find(o => o.label.replace(')','').toLowerCase() === (correctLetter||''));
+        resEl.textContent = '❌ Wrong! Answer: ' + (correctOpt ? correctOpt.full : correctRaw || '?');
+        resEl.style.color = '#C62828';
+        if (!globalMuted) speakWithGender('Wrong', activeWheel?.wheelVoice || 'female');
+        playLoseSound();
+      }
+      resEl.style.display = 'block';
+
+      // Auto-close overlay after short delay and call tMark
+      setTimeout(() => {
+        document.getElementById('mcq-ov').classList.remove('show');
+        tMark(isCorrect);
+      }, 1600);
+    };
+
+    grid.appendChild(btn);
+  });
+
+  // Reset result label
+  const resEl = document.getElementById('mcq-ov-result');
+  resEl.style.display = 'none';
+  resEl.textContent = '';
+
+  // Disable spin button while MCQ is open
+  document.getElementById('main-spin-btn').disabled = true;
+  document.getElementById('main-spin-btn').textContent = 'Waiting for answer...';
+
+  // Show the MCQ overlay
+  document.getElementById('mcq-ov').classList.add('show');
+}
+/* ══ END AUTO ANSWER MCQ ══════════════════════════════════════════ */
 </script>
 <div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem">
   <div style="max-width:800px;margin:0 auto">
     <h2 style="font-family:var(--font);font-size:22px;font-weight:900;margin-bottom:6px;color:var(--text)">Frequently asked questions</h2>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem">Everything you need to know about SpinPick — the free classroom spin wheel with scoring, reports and voice narration.</p>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem">Everything you need to know about WheelQuiz — the free classroom spin wheel with scoring, reports and voice narration.</p>
 
     <div style="display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap">
       <button id="faq-t-btn" onclick="showFaq('t')"
@@ -2978,21 +3213,21 @@ if(window.speechSynthesis)window.speechSynthesis.onvoiceschanged=()=>{};
 <script>
 /* ── FAQ ──────────────────────────────────────────────────────── */
 const TFAQ=[
-  ['Do I need an account to use SpinPick?','No account needed — SpinPick is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning. Creating an account (coming soon) will let you save your class lists and session history permanently across devices.'],
+  ['Do I need an account to use WheelQuiz?','No account needed — WheelQuiz is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning. Creating an account (coming soon) will let you save your class lists and session history permanently across devices.'],
   ['Can I import my class list from Google Classroom?','Google Classroom import is on our roadmap. In the meantime, paste your student names directly into the Wheel 1 items box — one name per line. Most teachers find copy-pasting from their register takes under 30 seconds.'],
   ['What if a student is absent?','Simply delete their name from the wheel items box before starting the game. Your changes take effect the next time you click Start. You can also uncheck a wheel entirely if you want to skip it for the day.'],
   ['Can two groups steal an unanswered question?','Yes — this is a great house rule! If a group answers incorrectly, spin Wheel 2 again to pick a new group. Any group that answers the stolen question correctly gets points. This keeps every round exciting.'],
-  ['Does SpinPick work on a classroom smartboard or projector?','Yes — SpinPick is fully responsive and designed to work on any screen size including interactive smartboards, projectors, tablets and phones. The single-page layout means the wheel is always front and centre without any navigation.'],
+  ['Does WheelQuiz work on a classroom smartboard or projector?','Yes — WheelQuiz is fully responsive and designed to work on any screen size including interactive smartboards, projectors, tablets and phones. The single-page layout means the wheel is always front and centre without any navigation.'],
   ['What does the topic performance heatmap in the report show?','After a session the report shows each topic\'s accuracy percentage — how often the selected group answered correctly. Topics with low accuracy (shown in red) highlight areas where students need more teaching time.'],
   ['Can I download the session results?','Yes — after each session click "View & download report" to export a PDF report (printable), a CSV spreadsheet (opens in Excel or Google Sheets) or a plain text session log file.'],
   ['How do I rename or customise the wheels?','Click the wheel title in the setup panel to rename it — the change reflects live on the wheel stage and spin button. Each wheel also has its own colour palette and spin sound so every wheel feels unique.'],
-  ['Can I use SpinPick with just one wheel?','Absolutely — uncheck any wheels you don\'t need and only the enabled wheels will spin. You can run a session with a single wheel, two wheels, or up to as many as you add.'],
-  ['Is SpinPick free? Are there ads?','SpinPick is free to use. Like most free web tools it may display non-intrusive ads to cover hosting costs. There are no paywalls, no premium tiers and no credit card required.'],
+  ['Can I use WheelQuiz with just one wheel?','Absolutely — uncheck any wheels you don\'t need and only the enabled wheels will spin. You can run a session with a single wheel, two wheels, or up to as many as you add.'],
+  ['Is WheelQuiz free? Are there ads?','WheelQuiz is free to use. Like most free web tools it may display non-intrusive ads to cover hosting costs. There are no paywalls, no premium tiers and no credit card required.'],
 ];
 const SFAQ=[
   ['Do we need to create an account to play?','No — just type your player names into the setup and hit Start. Zero signup, zero hassle. Your session runs entirely in the browser.'],
   ['Can we add our own custom punishments?','Yes! The Punishment wheel is fully editable. Open Wheel 3 in the setup panel and type any punishments you like — push ups, truth, dare, silly dances — one per line. The wheel updates instantly.'],
-  ['Can we play online with friends in different locations?','Real-time multiplayer is on our roadmap. For now SpinPick works great in person or over a video call — share your screen and everyone watches the wheel spin together.'],
+  ['Can we play online with friends in different locations?','Real-time multiplayer is on our roadmap. For now WheelQuiz works great in person or over a video call — share your screen and everyone watches the wheel spin together.'],
   ['Why does Wheel 2 grey out one name after Wheel 1 spins?','To prevent the same person being both the asker and the answerer! When Wheel 1 picks "Sarah", Sarah\'s segment on Wheel 2 turns grey and the wheel automatically skips her if it lands there, ensuring a fair and different person answers.'],
   ['How does scoring work in Student mode?','Answerer correct = +10 points. Answerer wrong = spin the punishment wheel, and the asker gets +5 consolation points for asking a question that stumped someone. This ensures every round has a points event and keeps the leaderboard moving.'],
   ['How many players can join a study session?','2 to 20 players across both wheels. For best results use 3–8 players — sessions stay fast-paced and every player gets picked regularly.'],
