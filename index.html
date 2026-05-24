@@ -519,9 +519,9 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
             <input type="checkbox" id="lms-mode-chk" onchange="toggleLastManStandingMode(this.checked)"
               style="margin-top:2px;width:15px;height:15px;accent-color:var(--green);flex-shrink:0">
             <span>
-              <span style="font-size:13px;font-weight:800;color:var(--green)">🏆 LAST STUDENT STANDING</span>
+              <span style="font-size:12px;font-weight:800;color:var(--green)">🏆 LAST STUDENT STANDING</span>
               <span style="display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4">
-                Wheel 1 = questioner, Wheel 2 = answerer. Battle until one player remains. Punishment wheel is off by default — enable Wheel 3 below to spin a punishment after each elimination.
+        
               </span>
             </span>
           </label>
@@ -532,9 +532,7 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
             <input type="checkbox" id="tvv-mode-chk" onchange="toggleTeamVsTeamMode(this.checked)"
               style="margin-top:2px;width:15px;height:15px;accent-color:var(--blue);flex-shrink:0">
             <span>
-              <span style="font-size:13px;font-weight:800;color:var(--blue)">⚔️ TEAM VS TEAM</span>
-              <span style="display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4">
-                Wheel 1 = Team A, Wheel 2 = Team B. Teams alternate asker/answerer each round. Game ends when one team is fully eliminated. Punishment wheel off by default.
+              <span style="font-size:12px;font-weight:900;color:var(--blue)">⚔️ TEAM VS TEAM</span>
               </span>
             </span>
           </label>
@@ -3290,26 +3288,29 @@ function shareScore() {
 <script>
 /* ── FAQ ──────────────────────────────────────────────────────── */
 const TFAQ=[
-  ['Do I need an account to use WheelQuiz?','No account needed — WheelQuiz is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning. Creating an account (coming soon) will let you save your class lists and session history permanently across devices.'],
-  ['Can I import my class list from Google Classroom?','Google Classroom import is on our roadmap. In the meantime, paste your student names directly into the Wheel 1 items box — one name per line. Most teachers find copy-pasting from their register takes under 30 seconds.'],
-  ['What if a student is absent?','Simply delete their name from the wheel items box before starting the game. Your changes take effect the next time you click Start. You can also uncheck a wheel entirely if you want to skip it for the day.'],
-  ['Can two groups steal an unanswered question?','Yes — this is a great house rule! If a group answers incorrectly, spin Wheel 2 again to pick a new group. Any group that answers the stolen question correctly gets points. This keeps every round exciting.'],
-  ['Does WheelQuiz work on a classroom smartboard or projector?','Yes — WheelQuiz is fully responsive and designed to work on any screen size including interactive smartboards, projectors, tablets and phones. The single-page layout means the wheel is always front and centre without any navigation.'],
-  ['What does the topic performance heatmap in the report show?','After a session the report shows each topic\'s accuracy percentage — how often the selected group answered correctly. Topics with low accuracy (shown in red) highlight areas where students need more teaching time.'],
-  ['Can I download the session results?','Yes — after each session click "View & download report" to export a PDF report (printable), a CSV spreadsheet (opens in Excel or Google Sheets) or a plain text session log file.'],
+  ['Do I need an account to use WheelQuiz?','No account needed — WheelQuiz is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning.'],
+  ['Can I custom my own Questions & Answers?','Yes, the Wheel 1 setting box requires one question and answer per line. Make sure every question includes a “:” or “)” for the correct formatting. You can also copy the default questions from the input box into your notepad to understand the required format more easily.'],
+  ['Can I use WheelQuiz with just one wheel?','Absolutely — when only 1 wheel is selected, the game works like a Solo Mode Self-Quiz where you answer the questions yourself. You can fully customize your own list of questions and answers for random spinning. To make the game more fun and engaging, you can also enable Punishment Mode on Wheel 3 by adding challenge tasks like push-ups, sit-ups, planks, and more whenever answers incorrectly.'],
+  ['What is the different between Wheel 1,2,3','In Teacher Mode, Wheel 1 is mainly used for questions and self-quiz gameplay, while Wheel 2 is designed for student names, player names, or team/group selections. Wheel 3 is an optional punishment wheel (disabled by default). Users can fully customize and rename all wheel parameters as needed.'],
+  ['Can i disable or modify punishment wheel?','Yes — this is an optional wheel to suit your prefrences. And default punishments intention is to make learning fun, safe and interactive.'],
   ['How do I rename or customise the wheels?','Click the wheel title in the setup panel to rename it — the change reflects live on the wheel stage and spin button. Each wheel also has its own colour palette and spin sound so every wheel feels unique.'],
-  ['Can I use WheelQuiz with just one wheel?','Absolutely — uncheck any wheels you don\'t need and only the enabled wheels will spin. You can run a session with a single wheel, two wheels, or up to as many as you add.'],
+  ['It sounds exciting! How do I start the game?','Simply edit the wheel parameters and click on “Save Settings & Start.” Then, click either the rectangular Spin button or the circular button at the center of the wheel to begin the game.'],
+  ['Does WheelQuiz work on mobile or desktops or laptop?','Yes, WheelQuiz works on all devices. However, on some mobile phones, male voice narration may not play due to mobile browser or voice synthesis limitations.'],
+  ['Can I download the session results?','Yes — after each session click "View & download report" to export a PDF report (printable), a CSV spreadsheet (opens in Excel or Google Sheets) or a plain text session log file.'],
   ['Is WheelQuiz free? Are there ads?','WheelQuiz is free to use. Like most free web tools it may display non-intrusive ads to cover hosting costs. There are no paywalls, no premium tiers and no credit card required.'],
 ];
 const SFAQ=[
-  ['Do we need to create an account to play?','No — just type your player names into the setup and hit Start. Zero signup, zero hassle. Your session runs entirely in the browser.'],
-  ['Can we add our own custom punishments?','Yes! The Punishment wheel is fully editable. Open Wheel 3 in the setup panel and type any punishments you like — push ups, truth, dare, silly dances — one per line. The wheel updates instantly.'],
-  ['Can we play online with friends in different locations?','Real-time multiplayer is on our roadmap. For now WheelQuiz works great in person or over a video call — share your screen and everyone watches the wheel spin together.'],
-  ['Why does Wheel 2 grey out one name after Wheel 1 spins?','To prevent the same person being both the asker and the answerer! When Wheel 1 picks "Sarah", Sarah\'s segment on Wheel 2 turns grey and the wheel automatically skips her if it lands there, ensuring a fair and different person answers.'],
-  ['How does scoring work in Student mode?','Answerer correct = +10 points. Answerer wrong = spin the punishment wheel, and the asker gets +5 consolation points for asking a question that stumped someone. This ensures every round has a points event and keeps the leaderboard moving.'],
-  ['How many players can join a study session?','2 to 20 players across both wheels. For best results use 3–8 players — sessions stay fast-paced and every player gets picked regularly.'],
-  ['Can we save our study group setup for next week?','Session saving (persistent groups) is coming soon. For now you can bookmark the page and re-enter your names — it only takes a few seconds since the default names are already there as a starting point.'],
-  ['How do we share our session results on TikTok or Instagram?','After the session tap "View session results" then "Download PDF". Screenshot the PDF or record your screen during the session — the confetti moments and punishment reveals make great short-form content!'],
+  ['Where can we play this game?','Student Mode can be played anywhere students are able to gather together, such as in classrooms, at home, during tuition sessions, study groups, camps, or even outdoor activities.'],
+  ['What is Last Student Standing Mode?','Last Student Standing is a Student vs Student survival battle where the game continues until only one student remains. Wheel 1 is the Questioner and Wheel 2 is the Answerer. If the Answerer answers correctly (+10 points), the Questioner gets eliminated. If the Answerer answers incorrectly (-10 points), the Answerer gets eliminated. Punishment Wheel 3 is enabled by default, and every eliminated student must spin the punishment wheel. If Punishment Wheel 3 is disabled, the game continues normally without punishments.'],
+  ['What is Team VS Team Mode?','Team VS Team Mode is a battle between Team A and Team B, similar to a competitive classroom challenge. Team A starts by asking a question to Team B. If the selected student from Team B answers incorrectly, that student is eliminated. Then Team B asks a question to Team A. If the selected student from Team A answers incorrectly, that student is eliminated. The first team to have all members eliminated loses the game. Punishment Wheel 3 is enabled by default, and every eliminated student must spin the punishment wheel. If Punishment Wheel 3 is disabled, the game continues normally without punishments.'],
+  ['Are there any other game modes?','Yes! If both Last Student Standing Mode and Team VS Team Mode are disabled, students can freely play using Wheels 1, 2, and 3 in a more casual gameplay style. For equal chances of asking and answering questions, enter the same list of student names into both Wheel 1 and Wheel 2. For unlimited gameplay rounds, disable the “Eliminate Wheel Spin Before” option.'],
+  ['Do I need an account to use WheelQuiz?','No account needed — WheelQuiz is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning.'],
+  ['Can i disable or modify punishment wheel?','Yes — this is an optional wheel to suit your prefrences. And default punishments intention is to make learning fun, safe and interactive.'],
+  ['How do I rename or customise the wheels?','Click the wheel title in the setup panel to rename it — the change reflects live on the wheel stage and spin button. Each wheel also has its own colour palette and spin sound so every wheel feels unique.'],
+  ['It sounds exciting! How do I start the game?','Simply edit the wheel parameters and click on “Save Settings & Start.” Then, click either the rectangular Spin button or the circular button at the center of the wheel to begin the game.'],
+  ['Does WheelQuiz work on mobile or desktops or laptop?','Yes, WheelQuiz works on all devices. However, on some mobile phones, male voice narration may not play due to mobile browser or voice synthesis limitations.'],
+  ['Can I download the session results?','Yes — after each session click "View & download report" to export a PDF report (printable), a CSV spreadsheet (opens in Excel or Google Sheets) or a plain text session log file.'],
+  ['Is WheelQuiz free? Are there ads?','WheelQuiz is free to use. Like most free web tools it may display non-intrusive ads to cover hosting costs. There are no paywalls, no premium tiers and no credit card required.'],
 ];
 
 function showFaq(type){
