@@ -27,6 +27,30 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 }
 .logo{font-family:var(--font);font-size:22px;font-weight:900;color:var(--blue);letter-spacing:-0.5px;text-decoration:none}
 .logo span{color:var(--green)}
+/* Mobile default: logo-group is an inline flex row (logo left, toggle right) */
+.topbar-logo-group{display:flex;align-items:center;gap:12px;}
+/* Desktop: WheelQuiz title centred on top row, Teacher/Student toggle centred below.
+   3-column grid: [empty spacer] [logo+toggle centred] [sound button right-aligned] */
+@media(min-width:768px){
+  .topbar{
+    display:grid;
+    grid-template-columns:0.55fr auto 1fr;
+    align-items:center;
+    height:auto;
+    padding:8px 1.5rem;
+    gap:0;
+  }
+  .topbar-logo-group{
+    grid-column:2;
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+  }
+  .topbar .logo{font-size:24px;letter-spacing:-0.5px;}
+  .topbar-right{
+    grid-column:3;
+    justify-self:end;
+    margin-left:0;
+  }
+}
 .mode-toggle{display:flex;gap:4px;background:var(--bg);border-radius:30px;padding:4px;border:1px solid var(--border)}
 .mode-toggle button{
   padding:5px 14px;border-radius:24px;border:none;font-size:12px;font-weight:700;
@@ -35,7 +59,7 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 .mode-toggle button.active-t{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(21,101,192,0.3)}
 .mode-toggle button.active-s{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(46,125,50,0.3)}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
-.mute-btn{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:13px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.18s;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.mute-btn{padding:3px 8px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.18s;white-space:nowrap;display:flex;align-items:center;gap:4px}
 .mute-btn.unmuted{background:#E8F5E9;border-color:#2E7D32;color:#2E7D32}
 .mute-btn.muted{background:#FAFAFA;border-color:#9E9E9E;color:#757575}
 /* keep narr-btn styles for per-wheel voice buttons */
@@ -43,6 +67,7 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 
 /* ── MAIN LAYOUT ── */
 .main{display:grid;grid-template-columns:1fr 300px;gap:0;min-height:calc(100vh - 54px)}
+@media(min-width:768px){.main{min-height:calc(100vh - 76px)}.left-panel{min-height:calc(100vh - 76px)}}
 
 /* ── LEFT PANEL ── */
 .left-panel{
@@ -356,13 +381,15 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
 <div id="cf"></div>
 
 <div class="topbar">
-  <span class="logo">Wheel<span>Quiz</span></span>
-  <div class="mode-toggle">
-    <button id="btn-t" class="active-t" onclick="switchMode('teacher')">👨‍🏫 Teacher</button>
-    <button id="btn-s" onclick="switchMode('student')">👨‍🎓 Student</button>
+  <div class="topbar-logo-group">
+    <span class="logo">Wheel<span>Quiz</span></span>
+    <div class="mode-toggle">
+      <button id="btn-t" class="active-t" onclick="switchMode('teacher')">👨‍🏫 Teacher</button>
+      <button id="btn-s" onclick="switchMode('student')">👨‍🎓 Student</button>
+    </div>
   </div>
   <div class="topbar-right">
-    <button class="mute-btn unmuted" id="mute-btn" onclick="toggleMute()" title="Toggle all sound &amp; voice">🔊 Sound ON</button>
+    <button class="mute-btn unmuted" id="mute-btn" onclick="toggleMute()" title="Toggle all sound &amp; voice">🔊 Sound</button>
   </div>
 </div>
 
@@ -417,7 +444,19 @@ body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:
         </div>
       </div>
       <div class="scoreboard">
-        <div class="sb-title">🏆 Scoreboard</div>
+        <div class="sb-title" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <span>🏆 Scoreboard</span>
+          <span style="display:flex;gap:5px;flex-shrink:0">
+            <button onclick="copyScore()" title="Copy score to clipboard"
+              style="padding:3px 9px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.15s"
+              onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📋 Copy</button>
+            <button onclick="shareScore()" title="Share score"
+              style="padding:3px 9px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.15s"
+              onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📤 Share</button>
+          </span>
+        </div>
         <div id="t-sb"><div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Start the game to see scores</div></div>
       </div>
       <button class="link-btn" onclick="showReport('teacher')">📊 View &amp; download report</button>
@@ -1250,12 +1289,12 @@ let teacherWheelConfigs = [];
 let studentWheelConfigs = [];
 
 const T_DEFAULTS = [
-{ title:'❓ Teacher Questions', items:'Question 1: Which animal says “meow”? a) Dog. b) Cat. c) Cow. d) Duck.\nQuestion 2: Which animal is known for having a long trunk? a) Lion. b) Elephant. c) Monkey. d) Rabbit.\nQuestion 3: Which animal can fly in the sky? a) Fish. b) Tiger. c) Bird. d) Horse.\nQuestion 4: Which animal lives in water and has fins? a) Fish. b) Bear. c) Zebra. d) Kangaroo.\nQuestion 5: Which animal is very tall with a long neck? a) Giraffe. b) Panda. c) Dog. d) Goat.\nQuestion 6: Which animal likes to eat bamboo? a) Panda. b) Lion. c) Crocodile. d) Fox.\nQuestion 7: Which animal says “woof”? a) Cat. b) Duck. c) Dog. d) Cow.\nQuestion 8: Which animal hops and carries babies in a pouch? a) Kangaroo. b) Tiger. c) Sheep. d) Camel.\nQuestion 9: Which animal is called the king of the jungle? a) Rabbit. b) Lion. c) Deer. d) Pig.\nQuestion 10: Which animal has black and white stripes? a) Zebra. b) Panda. c) Rhino. d) Camel.', paletteIdx:0, soundKey:'kalimba', narration:'Please answer', wheelVoice:'female', enabled:true,
+{ title:'❓ Teacher Questions/ Self Quiz', items:'Question 1: Which animal says “meow”? a) Dog. b) Cat. c) Cow. d) Duck.\nQuestion 2: Which animal is known for having a long trunk? a) Lion. b) Elephant. c) Monkey. d) Rabbit.\nQuestion 3: Which animal can fly in the sky? a) Fish. b) Tiger. c) Bird. d) Horse.\nQuestion 4: Which animal lives in water and has fins? a) Fish. b) Bear. c) Zebra. d) Kangaroo.\nQuestion 5: Which animal is very tall with a long neck? a) Giraffe. b) Panda. c) Dog. d) Goat.\nQuestion 6: Which animal likes to eat bamboo? a) Panda. b) Lion. c) Crocodile. d) Fox.\nQuestion 7: Which animal says “woof”? a) Cat. b) Duck. c) Dog. d) Cow.\nQuestion 8: Which animal hops and carries babies in a pouch? a) Kangaroo. b) Tiger. c) Sheep. d) Camel.\nQuestion 9: Which animal is called the king of the jungle? a) Rabbit. b) Lion. c) Deer. d) Pig.\nQuestion 10: Which animal has black and white stripes? a) Zebra. b) Panda. c) Rhino. d) Camel.', paletteIdx:0, soundKey:'kalimba', narration:'Please answer', wheelVoice:'female', enabled:true,
   //AUTO ANSWER MCQ — answer key: one correct answer label per line, matching each question line above
   answers:'b) Cat\nb) Elephant\nc) Bird\na) Fish\na) Giraffe\na) Panda\nc) Dog\na) Kangaroo\nb) Lion\na) Zebra',
   askedQuestions:new Set(), eliminateSpinBefore:true },
 
-  { title:'👥 Student Answer', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true },
+  { title:'👥 Student Answer', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:false, eliminateSpinBefore:true },
   { title:'😂 Student Punishments', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
 ];
 const S_DEFAULTS = [
@@ -1830,7 +1869,7 @@ function startTeacher() {
     answererWheel.items.forEach(item => { scores[item]=0; scoreboardNames.add(item); });
   } else {
     // Single-wheel or questions+punishment only: use a single "Class Score" tracker
-    const sessionName = '📊 Class Score';
+    const sessionName = '⭐ My Score';
     scores[sessionName] = 0;
     scoreboardNames.add(sessionName);
   }
@@ -1989,7 +2028,7 @@ function onWheelResult(key, winner) {
       } else {
         // Normal teacher last wheel — AUTO ANSWER MCQ: show MCQ choices if available, else manual
         // In single-wheel mode curGroup is null — use "Class" as the group label
-        const groupLabel = curGroup || (scoreboardNames.has('📊 Class Score') ? 'Class' : curGroup);
+        const groupLabel = curGroup || (scoreboardNames.has('⭐ My Score') ? 'Class' : curGroup);
         showMCQOverlay(curTopic, groupLabel);
       }
 
@@ -2072,7 +2111,7 @@ function tMark(ok) {
   const topic = archivedWheels[0]?.result || curAsker || '—';
   const group  = archivedWheels[1]?.result || curAnswerer || '—';
   // Single-wheel mode: score against the session tracker instead of a missing group name
-  const scoreKey = (scores[group] !== undefined) ? group : (scoreboardNames.has('📊 Class Score') ? '📊 Class Score' : group);
+  const scoreKey = (scores[group] !== undefined) ? group : (scoreboardNames.has('⭐ My Score') ? '⭐ My Score' : group);
   const quizDone=isTeacherQuizComplete();
   if (!topicS[topic]) topicS[topic]={c:0,w:0};
   if (ok) {
@@ -2470,7 +2509,7 @@ function toggleMute() {
     stopSpinSound();
     window.speechSynthesis && window.speechSynthesis.cancel();
   } else {
-    btn.textContent = '🔊 Sound ON';
+    btn.textContent = '🔊 Sound';
     btn.className = 'mute-btn unmuted';
   }
 }
@@ -3189,6 +3228,44 @@ function showMCQOverlay(topic, group) {
   document.getElementById('mcq-ov').classList.add('show');
 }
 /* ══ END AUTO ANSWER MCQ ══════════════════════════════════════════ */
+
+/* ══ SHARE / COPY SCORE ═══════════════════════════════════════════ */
+function buildScoreMessage() {
+  const entries = Object.entries(scores)
+    .filter(([n]) => scoreboardNames.size === 0 || scoreboardNames.has(n))
+    .sort((a,b) => b[1]-a[1]);
+  const pct = rounds > 0 ? Math.round(correct / rounds * 100) : 0;
+  const topLine = entries.length > 0
+    ? entries.map(([n,p],i) => `${['🥇','🥈','🥉'][i]||'  '} ${n}: ${p}pts`).join('\n')
+    : `Score: ${correct}/${rounds}`;
+  return `🎯 I just played WheelQuiz!\nHere is my score!\n${topLine}\n✅ ${correct}/${rounds} correct (${pct}%)\n\n🔗 Play free:\nhttps://www.WheelQuiz.com`;
+}
+
+function copyScore() {
+  const msg = buildScoreMessage();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(() => {
+      const btns = document.querySelectorAll('[onclick="copyScore()"]');
+      btns.forEach(b => { const orig=b.textContent; b.textContent='✅ Copied!'; b.style.color='var(--green)'; b.style.borderColor='var(--green)'; setTimeout(()=>{b.textContent=orig;b.style.color='';b.style.borderColor='';},1800); });
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = msg; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    alert('Score copied to clipboard!');
+  }
+}
+
+function shareScore() {
+  const msg = buildScoreMessage();
+  if (navigator.share) {
+    navigator.share({ title: 'My WheelQuiz Score', text: msg, url: 'https://www.WheelQuiz.com' }).catch(()=>{});
+  } else {
+    copyScore();
+  }
+}
+/* ══ END SHARE / COPY SCORE ══════════════════════════════════════ */
 </script>
 <div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem">
   <div style="max-width:800px;margin:0 auto">
