@@ -1293,12 +1293,12 @@ const T_DEFAULTS = [
   askedQuestions:new Set(), eliminateSpinBefore:true },
 
   { title:'👥 Student Answer', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:false, eliminateSpinBefore:true },
-  { title:'😂 Student Challenge', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
+  { title:'😂 Student Punishments', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
 ];
 const S_DEFAULTS = [
   { title:'🔵 Wheel 1 — Team A',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
   { title:'🔴 Wheel 2 — Team B',      items:'Alex\nMia\nNoah\nEmma\nLiam', paletteIdx:1, soundKey:'chime',   narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
-  { title:'😂 Wheel 3 — Challenge', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — on by default
+  { title:'😂 Wheel 3 — Punishments', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — on by default
 ];
 function initWheelConfigs() {
   const prevLms = studentWheelConfigs.lastManStanding; //last man standing
@@ -1699,13 +1699,13 @@ function isPunishWheel(cfg) {
   return (cfg.title||'').toLowerCase().includes('punish') || (cfg.title||'').includes('😂');
 }
 
-function buildQueueFromConfigs(m, includeChallenge=false) {
+function buildQueueFromConfigs(m, includePunishment=false) {
   const configs = getConfigs(m);
   const enabled = configs.filter(c => c.enabled);
   if (enabled.length === 0) return [];
-  // For student AND teacher mode, exclude Challenge wheels from the main round queue.
+  // For student AND teacher mode, exclude punishment wheels from the main round queue.
   // They are added dynamically on wrong answer only when enabled.
-  const filtered = (!includeChallenge)
+  const filtered = (!includePunishment)
     ? enabled.filter(c => !isPunishWheel(c))
     : enabled;
   if (filtered.length === 0) return [];
@@ -1764,7 +1764,7 @@ function buildQueueFromConfigs(m, includeChallenge=false) {
 }
 
 function getPunishWheelFromConfigs(m) {
-  // Support both teacher and student Challenge wheels
+  // Support both teacher and student punishment wheels
   const sourceConfigs = (m === 'teacher') ? teacherWheelConfigs : studentWheelConfigs;
   const configs = sourceConfigs.filter(c => c.enabled && isPunishWheel(c));
   if (!configs.length) return null;
@@ -1777,8 +1777,8 @@ function getPunishWheelFromConfigs(m) {
   w.narration   = cfg.narration   || '';
   w.wheelVoice  = cfg.wheelVoice  || 'female';
   w.isLastWheel = true;
-  w.isChallenge = true; // flag for text shrink rendering
-  // Apply eliminateSpinBefore history — grey out previously picked Challenge
+  w.isPunishment = true; // flag for text shrink rendering
+  // Apply eliminateSpinBefore history — grey out previously picked punishments
   if (cfg.eliminateSpinBefore !== false && cfg.pickedItems && cfg.pickedItems.size > 0) {
     const greyIndices = [];
     items.forEach((item, idx) => { if (cfg.pickedItems.has(item)) greyIndices.push(idx); });
@@ -1842,7 +1842,7 @@ function startTeacher() {
   for (const w of queue) {
     if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
   }
-  scores={}; topicS={}; scoreboardNames=new Set(); rounds=correct=wrongs=0; teacherChallenge=0; sessionLog=[]; archivedWheels=[];
+  scores={}; topicS={}; scoreboardNames=new Set(); rounds=correct=wrongs=0; teacherPunishments=0; sessionLog=[]; archivedWheels=[];
   Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
   teacherQuizEnded=false;
   curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
@@ -1866,12 +1866,12 @@ function startTeacher() {
     // Normal multi-wheel: last non-punish wheel has the answerer names
     answererWheel.items.forEach(item => { scores[item]=0; scoreboardNames.add(item); });
   } else {
-    // Single-wheel or questions+Challenge only: use a single "Class Score" tracker
+    // Single-wheel or questions+punishment only: use a single "Class Score" tracker
     const sessionName = '⭐ My Score';
     scores[sessionName] = 0;
     scoreboardNames.add(sessionName);
   }
-  // Always tag the very last wheel in the queue as isLastWheel (Challenge or answerer)
+  // Always tag the very last wheel in the queue as isLastWheel (punishment or answerer)
   clearArchive();
   // Tag last wheel
   queue[queue.length-1].isLastWheel = true;
@@ -1915,7 +1915,7 @@ function startStudent() {
   for (const w of queue) {
     if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
   }
-  scores={}; punishCt={}; scoreboardNames=new Set(); rounds=correct=wrongs=Challenge=0; sessionLog=[]; archivedWheels=[];
+  scores={}; punishCt={}; scoreboardNames=new Set(); rounds=correct=wrongs=punishments=0; sessionLog=[]; archivedWheels=[];
   Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
   studentQuizEnded=false;
   curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
@@ -2007,14 +2007,14 @@ function onWheelResult(key, winner) {
 
   if (isLast) {
     if (mode === 'teacher') {
-      // Check if this final wheel IS the teacher Challenge wheel
-      const isChallenge = isPunishWheel(activeWheel);
-      if (isChallenge) {
-        // Teacher Challenge spin resolved — increment counter and continue to next round
-        teacherChallenge++;
+      // Check if this final wheel IS the teacher punishment wheel
+      const isPunishment = isPunishWheel(activeWheel);
+      if (isPunishment) {
+        // Teacher punishment spin resolved — increment counter and continue to next round
+        teacherPunishments++;
         const tpEl = document.getElementById('t-p');
-        if (tpEl) tpEl.textContent = teacherChallenge;
-        // The punished student is curGroup (last Wheel 2 result before Challenge)
+        if (tpEl) tpEl.textContent = teacherPunishments;
+        // The punished student is curGroup (last Wheel 2 result before punishment)
         const punishedName = curGroup || '—';
         playPunishSound();
         showOv('😂', punishedName + ' gets punished!', winner + '\n\nPress Continue to spin next question.', 'punish');
@@ -2031,13 +2031,13 @@ function onWheelResult(key, winner) {
       }
 
     } else {
-      // Student mode — check if this final wheel IS the Challenge wheel
-      const isChallenge = isPunishWheel(activeWheel);
-      if (isChallenge) {
-        // Challenge spin resolved — update counter and continue
-        Challenge++;
-        document.getElementById('s-p').textContent = Challenge;
-        //last man standing — Challenge after elimination
+      // Student mode — check if this final wheel IS the punishment wheel
+      const isPunishment = isPunishWheel(activeWheel);
+      if (isPunishment) {
+        // Punishment spin resolved — update counter and continue
+        punishments++;
+        document.getElementById('s-p').textContent = punishments;
+        //last man standing — punishment after elimination
         if((lmsActive||tvvActive)&&lmsAfterPunishAction){
           const punishedName=lmsPendingPunishPlayer||activeWheel.lmsPunishFor||'—';
           if(punishCt[punishedName]!==undefined)punishCt[punishedName]++;
@@ -2049,14 +2049,14 @@ function onWheelResult(key, winner) {
           document.getElementById('main-spin-btn').textContent='Continue ↑';
           return;
         }
-        // Get names from archived non-Challenge wheels
+        // Get names from archived non-punishment wheels
         const nonPunish = archivedWheels.filter(w => !isPunishWheel({title:w.title}));
         const askerName    = nonPunish[0]?.result || '—';
         const answererName = nonPunish[1]?.result || askerName;
         if (punishCt[answererName] !== undefined) punishCt[answererName]++;
         playPunishSound();
         updateSSB();
-        // Check if this Challenge was the last round — end quiz after spinning
+        // Check if this punishment was the last round — end quiz after spinning
         if (activeWheel.triggersQuizEnd) {
           studentQuizEnded=true;
           pendingAdvanceWheel=false;
@@ -2140,16 +2140,16 @@ function tMark(ok) {
     showOv('🎯','Quiz Ended!','View or Download Scoreboard\nShare your result','info');
     return;
   }
-  // If wrong answer AND teacher Challenge wheel is enabled, queue it first
+  // If wrong answer AND teacher punishment wheel is enabled, queue it first
   if (!ok) {
     const pw = getPunishWheelFromConfigs('teacher');
     if (pw) {
       wheelQueue = [pw];
-      showOv('😢',`${group} got it wrong!`,`Spin the Challenge wheel! 👇`, 'lose');
+      showOv('😢',`${group} got it wrong!`,`Spin the punishment wheel! 👇`, 'lose');
       loadNextWheel(true);
       return;
     }
-    // No Challenge wheel — show incorrect overlay then continue
+    // No punishment wheel — show incorrect overlay then continue
     showOv('😢','Incorrect!',`${scoreWrong > 0 ? '+' : ''}${scoreWrong} points this round`,'lose');
   } else {
     showOv('🎉', 'Correct!', `+${scoreCorrect} points! 🏆`, 'win');
@@ -2195,23 +2195,23 @@ function sMark(ok) {
   } else {
     playLoseSound();
     wrongs++; const _swEl=document.getElementById('s-w'); if(_swEl)_swEl.textContent=wrongs;
-    // Apply wrong score immediately so dashboard updates before Challenge wheel spins
+    // Apply wrong score immediately so dashboard updates before punishment wheel spins
     if (scores[answerer] !== undefined) scores[answerer] = (scores[answerer]||0) + sScoreWrong;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong',points:sScoreWrong});
     updateSSB();
     document.getElementById('s-ok').disabled=true;
     document.getElementById('s-no').disabled=true;
-    // Challenge wheel takes priority — spin it BEFORE checking quiz complete
+    // Punishment wheel takes priority — spin it BEFORE checking quiz complete
     const pw = getPunishWheelFromConfigs('student');
     if (pw) {
-      // Mark quizDone on the Challenge wheel so it triggers end-of-quiz after spinning
+      // Mark quizDone on the punishment wheel so it triggers end-of-quiz after spinning
       pw.triggersQuizEnd = quizDone;
       wheelQueue = [pw];
-      showOv('😢',`${answerer} got it wrong!`,`Spin the Challenge wheel! 👇`,'lose');
+      showOv('😢',`${answerer} got it wrong!`,`Spin the punishment wheel! 👇`,'lose');
       loadNextWheel(true);
       return;
     }
-    // No Challenge wheel — now check if quiz is complete
+    // No punishment wheel — now check if quiz is complete
     if(quizDone){
       studentQuizEnded=true;
       pendingAdvanceWheel=false;
@@ -2223,7 +2223,7 @@ function sMark(ok) {
       return;
     }
     // Not done — move to next round
-    showOv('😢',`${answerer} got it wrong!`,`No Challenge wheel set.\nMoving to next round.`,'lose');
+    showOv('😢',`${answerer} got it wrong!`,`No punishment wheel set.\nMoving to next round.`,'lose');
     resetRound();
     const q = buildQueueFromConfigs('student');
     if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
@@ -2271,7 +2271,7 @@ function collapseAllWheels(m) {
 
 /* ══ SCOREBOARDS ════════════════════════════════════════════════ */
 function updateTSB(){
-  // Only show names registered as scoreboard players — no topics, no Challenge
+  // Only show names registered as scoreboard players — no topics, no punishments
   const entries = Object.entries(scores)
     .filter(([n]) => scoreboardNames.size === 0 || scoreboardNames.has(n))
     .sort((a,b) => b[1]-a[1]);
@@ -2295,7 +2295,7 @@ function updateTSB(){
       <span class="score-pts">${p}pts</span></div>`).join('');
 }
 function updateSSB(){
-  // Only show names registered as scoreboard players — no Challenge items
+  // Only show names registered as scoreboard players — no punishment items
   const entries = Object.entries(scores)
     .filter(([n]) => scoreboardNames.size === 0 || scoreboardNames.has(n))
     .sort((a,b) => b[1]-a[1]);
@@ -2326,7 +2326,7 @@ function switchMode(m){
   archivedWheels=[];wheelQueue=[];activeWheel=null;
   curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
   scores={};punishCt={};topicS={};scoreboardNames=new Set();
-  rounds=correct=wrongs=Challenge=teacherChallenge=0;
+  rounds=correct=wrongs=punishments=teacherPunishments=0;
   clearArchive();
   document.getElementById('main-spin-btn').disabled=false;
   document.getElementById('main-spin-btn').textContent='⟳ Spin';
@@ -2444,7 +2444,7 @@ function downloadPDF(m){
   <tr><td>Rounds</td><td>${rounds}</td></tr><tr><td>Correct</td><td>${correct}</td></tr>
   <tr><td>Wrong</td><td>${wrongs}</td></tr><tr><td>Accuracy</td><td>${acc}%</td></tr>
   ${sorted[0]?`<tr><td>Winner</td><td>🏆 ${sorted[0][0]} — ${sorted[0][1]}pts</td></tr>`:''}</table>
-  <h2>Scoreboard</h2><table><tr><th>Rank</th><th>Name</th><th>Points</th>${m==='student'?'<th>Challenge</th>':''}</tr>`;
+  <h2>Scoreboard</h2><table><tr><th>Rank</th><th>Name</th><th>Points</th>${m==='student'?'<th>Punishments</th>':''}</tr>`;
   sorted.forEach(([n,p],i)=>html+=`<tr><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${n}</td><td>${p}</td>${m==='student'?`<td>${punishCt[n]||0}</td>`:''}</tr>`);
   html+=`</table>`;
   if(m==='teacher'&&Object.keys(topicS).length){
@@ -2463,7 +2463,7 @@ function downloadPDF(m){
 
 function downloadCSV(m){
   const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'WheelQuiz'):'WheelQuiz_Study').replace(/[^a-z0-9]/gi,'_');
-  let csv=`WheelQuiz REPORT\r\nDate,${sessionDate}\r\nRounds,${rounds}\r\nCorrect,${correct}\r\nWrong,${wrongs}\r\nAccuracy,${rounds?Math.round(correct/rounds*100):0}%\r\n\r\nSCOREBOARD\r\nRank,Name,Points${m==='student'?',Challenge':''}\r\n`;
+  let csv=`WheelQuiz REPORT\r\nDate,${sessionDate}\r\nRounds,${rounds}\r\nCorrect,${correct}\r\nWrong,${wrongs}\r\nAccuracy,${rounds?Math.round(correct/rounds*100):0}%\r\n\r\nSCOREBOARD\r\nRank,Name,Points${m==='student'?',Punishments':''}\r\n`;
   Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>csv+=`${i+1},${n},${p}${m==='student'?','+(punishCt[n]||0):''}\r\n`);
   if(m==='teacher'&&Object.keys(topicS).length){
     csv+=`\r\nTOPIC PERFORMANCE\r\nTopic,Correct,Wrong,Accuracy\r\n`;
@@ -2477,7 +2477,7 @@ function downloadCSV(m){
 function downloadLog(m){
   const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'WheelQuiz'):'WheelQuiz_Study').replace(/[^a-z0-9]/gi,'_');
   let log=`=== WheelQuiz SESSION LOG ===\nDate: ${sessionDate}\nMode: ${m}\nRounds: ${rounds} | Correct: ${correct} | Wrong: ${wrongs}\nAccuracy: ${rounds?Math.round(correct/rounds*100):0}%\n\n--- SCORES ---\n`;
-  Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>log+=`  ${i+1}. ${n.padEnd(16)} ${p}pts${m==='student'&&punishCt[n]?' ('+punishCt[n]+' Challenge)':''}\n`);
+  Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>log+=`  ${i+1}. ${n.padEnd(16)} ${p}pts${m==='student'&&punishCt[n]?' ('+punishCt[n]+' punishments)':''}\n`);
   if(sessionLog.length){log+=`\n--- ROUND LOG ---\n`;sessionLog.forEach(r=>log+=`[${r.time}] R${r.round}: ${r.asker} → ${r.answerer} | ${r.result} | ${r.points>0?'+':''}${r.points}pts\n`);}
   log+=`\n=== END ===\nGenerated by WheelQuiz\n`;
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([log],{type:'text/plain'}));
@@ -2600,8 +2600,8 @@ function toggleTeamVsTeamMode(on){
   }
   syncStudentBattleModeUI();
 }
-//last man standing + team vs team — shared Challenge wheel check
-function lmsIsChallengeEnabled(){
+//last man standing + team vs team — shared punishment wheel check
+function lmsIsPunishmentEnabled(){
   return (lmsActive||tvvActive)&&studentWheelConfigs.some(c=>c.enabled&&isPunishWheel(c));
 }
 //last man standing + team vs team
@@ -2624,8 +2624,8 @@ function syncTeamVsTeamUI(){
   if(noBtn&&on)noBtn.innerHTML=`✗ Wrong<br><small>eliminate answerer · +${lmsBattlePts||sScoreCorrect} pts to asker team</small>`;
   else if(noBtn&&!studentWheelConfigs.lastManStanding)updateStudentScoreSettings();
 }
-//last man standing — spin Challenge wheel before resuming LMS round
-function lmsStartChallengepin(playerName,callback){
+//last man standing — spin punishment wheel before resuming LMS round
+function lmsStartPunishmentSpin(playerName,callback){
   const pw=getPunishWheelFromConfigs('student');
   if(!pw){if(callback)callback();return false;}
   lmsPendingPunishPlayer=playerName;
@@ -2635,7 +2635,7 @@ function lmsStartChallengepin(playerName,callback){
   wheelQueue=[pw];
   archivedWheels=[];
   ['s-ok','s-no'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
-  showOv('😂',playerName+' eliminated!','Spin the Challenge wheel! 👇','punish');
+  showOv('😂',playerName+' eliminated!','Spin the punishment wheel! 👇','punish');
   loadNextWheel(true);
   return true;
 }
@@ -2643,8 +2643,8 @@ function lmsStartChallengepin(playerName,callback){
 function lmsAfterEliminationThenContinue(eliminatedName,ok,asker,answerer,pts){
   const proceedNoPunish=()=>lmsFinishMarkAnswerRound(ok,asker,answerer,pts,false);
   const proceedAfterPunish=()=>lmsFinishMarkAnswerRound(ok,asker,answerer,pts,true); //last man standing — skip duplicate correct/wrong box
-  if(lmsIsChallengeEnabled()){
-    if(lmsStartChallengepin(eliminatedName,proceedAfterPunish))return;
+  if(lmsIsPunishmentEnabled()){
+    if(lmsStartPunishmentSpin(eliminatedName,proceedAfterPunish))return;
   }
   proceedNoPunish();
 }
@@ -2765,7 +2765,7 @@ function updateLMSStatusPanel(asker,answerer){
     const sn=survivor?lmsGetBattleWheels().indexOf(survivor)+1:'?';
     msg=`Wheel ${sn} only · ${msg}`;
   }
-  if(lmsIsChallengeEnabled())msg+=` · 😂 Punish on elimination`;
+  if(lmsIsPunishmentEnabled())msg+=` · 😂 Punish on elimination`;
   if(asker&&answerer)msg=`Round: <strong>${asker}</strong> asks → <strong>${answerer}</strong> answers · ${msg}`;
   else if(active.length)msg+=`: ${active.join(', ')}`;
   el.innerHTML=msg;
@@ -2967,7 +2967,7 @@ function updateTVVStatusPanel(asker,answerer){
   const askFirst=(tvvRoundNum%2===1);
   let msg=`Round ${tvvRoundNum} · ${tvvTeamDisplay(0)}: ${aLeft} left · ${tvvTeamDisplay(1)}: ${bLeft} left`;
   msg+=` · Next asker: ${askFirst?tvvTeamDisplay(0):tvvTeamDisplay(1)}`;
-  if(lmsIsChallengeEnabled())msg+=' · 😂 Punish on elimination';
+  if(lmsIsPunishmentEnabled())msg+=' · 😂 Punish on elimination';
   if(asker&&answerer)msg=`<strong>${asker}</strong> (${tvvTeamDisplay(curAskerTeamIdx)}) asks → <strong>${answerer}</strong> (${tvvTeamDisplay(curAnswererTeamIdx)}) answers · ${msg}`;
   el.innerHTML=msg;
 }
@@ -3010,8 +3010,8 @@ function tvvFinishRound(ok,asker,answerer,pts,skipOutcomeOverlay){
 function tvvAfterEliminationThenContinue(eliminatedName,asker,answerer,pts){
   const proceedAfterPunish=()=>tvvFinishRound(false,asker,answerer,pts,true);
   const proceedNoPunish=()=>tvvFinishRound(false,asker,answerer,pts,false);
-  if(lmsIsChallengeEnabled()){
-    if(lmsStartChallengepin(eliminatedName,proceedAfterPunish))return;
+  if(lmsIsPunishmentEnabled()){
+    if(lmsStartPunishmentSpin(eliminatedName,proceedAfterPunish))return;
   }
   proceedNoPunish();
 }
@@ -3290,9 +3290,9 @@ function shareScore() {
 const TFAQ=[
   ['Do I need an account to use WheelQuiz?','No account needed — WheelQuiz is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning.'],
   ['Can I custom my own Questions & Answers?','Yes, the Wheel 1 setting box requires one question and answer per line. Make sure every question includes a “:” or “)” for the correct formatting. You can also copy the default questions from the input box into your notepad to understand the required format more easily.'],
-  ['Can I use WheelQuiz with just one wheel?','Absolutely — when only 1 wheel is selected, the game works like a Solo Mode Self-Quiz where you answer the questions yourself. You can fully customize your own list of questions and answers for random spinning. To make the game more fun and engaging, you can also enable Challenge Mode on Wheel 3 by adding challenge tasks like push-ups, sit-ups, planks, and more whenever answers incorrectly.'],
-  ['What is the different between Wheel 1,2,3','In Teacher Mode, Wheel 1 is mainly used for questions and self-quiz gameplay, while Wheel 2 is designed for student names, player names, or team/group selections. Wheel 3 is an optional Challenge wheel (disabled by default). Users can fully customize and rename all wheel parameters as needed.'],
-  ['Can i disable or modify Challenge Wheel?','Yes — this is an optional wheel to suit your prefrences. And default Challenge intention is to make learning fun, safe and interactive.'],
+  ['Can I use WheelQuiz with just one wheel?','Absolutely — when only 1 wheel is selected, the game works like a Solo Mode Self-Quiz where you answer the questions yourself. You can fully customize your own list of questions and answers for random spinning. To make the game more fun and engaging, you can also enable Punishment Mode on Wheel 3 by adding challenge tasks like push-ups, sit-ups, planks, and more whenever answers incorrectly.'],
+  ['What is the different between Wheel 1,2,3','In Teacher Mode, Wheel 1 is mainly used for questions and self-quiz gameplay, while Wheel 2 is designed for student names, player names, or team/group selections. Wheel 3 is an optional punishment wheel (disabled by default). Users can fully customize and rename all wheel parameters as needed.'],
+  ['Can i disable or modify punishment wheel?','Yes — this is an optional wheel to suit your prefrences. And default punishments intention is to make learning fun, safe and interactive.'],
   ['How do I rename or customise the wheels?','Click the wheel title in the setup panel to rename it — the change reflects live on the wheel stage and spin button. Each wheel also has its own colour palette and spin sound so every wheel feels unique.'],
   ['It sounds exciting! How do I start the game?','Simply edit the wheel parameters and click on “Save Settings & Start.” Then, click either the rectangular Spin button or the circular button at the center of the wheel to begin the game.'],
   ['Does WheelQuiz work on mobile or desktops or laptop?','Yes, WheelQuiz works on all devices. However, on some mobile phones, male voice narration may not play due to mobile browser or voice synthesis limitations.'],
@@ -3301,11 +3301,11 @@ const TFAQ=[
 ];
 const SFAQ=[
   ['Where can we play this game?','Student Mode can be played anywhere students are able to gather together, such as in classrooms, at home, during tuition sessions, study groups, camps, or even outdoor activities.'],
-  ['What is Last Student Standing Mode?','Last Student Standing is a Student vs Student survival battle where the game continues until only one student remains. Wheel 1 is the Questioner and Wheel 2 is the Answerer. If the Answerer answers correctly (+10 points), the Questioner gets eliminated. If the Answerer answers incorrectly (-10 points), the Answerer gets eliminated. Challenge Wheel 3 is enabled by default, and every eliminated student must spin the Challenge wheel. If Challenge Wheel 3 is disabled, the game continues normally without Challenge.'],
-  ['What is Team VS Team Mode?','Team VS Team Mode is a battle between Team A and Team B, similar to a competitive classroom challenge. Team A starts by asking a question to Team B. If the selected student from Team B answers incorrectly, that student is eliminated. Then Team B asks a question to Team A. If the selected student from Team A answers incorrectly, that student is eliminated. The first team to have all members eliminated loses the game. Challenge Wheel 3 is enabled by default, and every eliminated student must spin the Challenge wheel. If Challenge Wheel 3 is disabled, the game continues normally without Challenge.'],
+  ['What is Last Student Standing Mode?','Last Student Standing is a Student vs Student survival battle where the game continues until only one student remains. Wheel 1 is the Questioner and Wheel 2 is the Answerer. If the Answerer answers correctly (+10 points), the Questioner gets eliminated. If the Answerer answers incorrectly (-10 points), the Answerer gets eliminated. Punishment Wheel 3 is enabled by default, and every eliminated student must spin the punishment wheel. If Punishment Wheel 3 is disabled, the game continues normally without punishments.'],
+  ['What is Team VS Team Mode?','Team VS Team Mode is a battle between Team A and Team B, similar to a competitive classroom challenge. Team A starts by asking a question to Team B. If the selected student from Team B answers incorrectly, that student is eliminated. Then Team B asks a question to Team A. If the selected student from Team A answers incorrectly, that student is eliminated. The first team to have all members eliminated loses the game. Punishment Wheel 3 is enabled by default, and every eliminated student must spin the punishment wheel. If Punishment Wheel 3 is disabled, the game continues normally without punishments.'],
   ['Are there any other game modes?','Yes! If both Last Student Standing Mode and Team VS Team Mode are disabled, students can freely play using Wheels 1, 2, and 3 in a more casual gameplay style. For equal chances of asking and answering questions, enter the same list of student names into both Wheel 1 and Wheel 2. For unlimited gameplay rounds, disable the “Eliminate Wheel Spin Before” option.'],
   ['Do I need an account to use WheelQuiz?','No account needed — WheelQuiz is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning.'],
-  ['Can i disable or modify Challenge wheel?','Yes — this is an optional wheel to suit your prefrences. And default Challenge intention is to make learning fun, safe and interactive.'],
+  ['Can i disable or modify punishment wheel?','Yes — this is an optional wheel to suit your prefrences. And default punishments intention is to make learning fun, safe and interactive.'],
   ['How do I rename or customise the wheels?','Click the wheel title in the setup panel to rename it — the change reflects live on the wheel stage and spin button. Each wheel also has its own colour palette and spin sound so every wheel feels unique.'],
   ['It sounds exciting! How do I start the game?','Simply edit the wheel parameters and click on “Save Settings & Start.” Then, click either the rectangular Spin button or the circular button at the center of the wheel to begin the game.'],
   ['Does WheelQuiz work on mobile or desktops or laptop?','Yes, WheelQuiz works on all devices. However, on some mobile phones, male voice narration may not play due to mobile browser or voice synthesis limitations.'],
@@ -3344,79 +3344,5 @@ function tFaq(type,i){
 showFaq('t');
 </script>
 
-<!-- ── DONATE SECTION ── -->
-<div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem">
-  <div style="max-width:800px;margin:0 auto;text-align:center">
-
-    <div style="display:inline-block;background:var(--blue-l);color:var(--blue);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:1rem">
-      Support WheelQuiz
-    </div>
-
-    <h2 style="font-family:var(--font);font-size:22px;font-weight:900;color:var(--text);margin-bottom:8px">
-      Enjoy WheelQuiz? Buy us a coffee ☕
-    </h2>
-    <p style="font-size:14px;color:var(--muted);max-width:480px;margin:0 auto 1.75rem;line-height:1.6">
-      WheelQuiz is completely free with no paywalls. If it has helped your classroom or saved you time,
-      a small donation keeps the project alive and ad-free. Thank you! 🙏
-    </p>
-
-    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-
-      <!-- Ko-fi button -->
-      <a href="https://ko-fi.com/steverlast"
-         target="_blank"
-         rel="noopener noreferrer"
-         style="display:inline-flex;align-items:center;gap:10px;
-                background:#FF5E5B;color:#fff;
-                font-family:var(--fontb);font-size:15px;font-weight:700;
-                padding:13px 26px;border-radius:30px;text-decoration:none;
-                box-shadow:0 4px 14px rgba(255,94,91,0.35);
-                transition:transform 0.15s,box-shadow 0.15s"
-         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(255,94,91,0.45)'"
-         onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(255,94,91,0.35)'">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.034-.099-.086-.099-.086-.383-.uso-.793-1.077-.793-1.077-1.31-1.606.757-3.468.757-3.468 1.67-1.404 3.927-.489 4.516 1.27.197.568.227 1.187-.06 1.362z" fill="white"/>
-        </svg>
-        Support on Ko-fi
-      </a>
-
-      <!-- PayPal button -->
-      <a href="https://paypal.me/steverlast"
-         target="_blank"
-         rel="noopener noreferrer"
-         style="display:inline-flex;align-items:center;gap:10px;
-                background:#003087;color:#fff;
-                font-family:var(--fontb);font-size:15px;font-weight:700;
-                padding:13px 26px;border-radius:30px;text-decoration:none;
-                box-shadow:0 4px 14px rgba(0,48,135,0.30);
-                transition:transform 0.15s,box-shadow 0.15s"
-         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,48,135,0.42)'"
-         onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(0,48,135,0.30)'">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.291-.077.443-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.1zm14.146-14.42c-.039.21-.081.42-.127.63-1.21 6.22-5.37 8.29-10.68 8.29H8.198l-1.516 9.6h4.943a.78.78 0 0 0 .771-.66l.032-.163.615-3.89.04-.21a.78.78 0 0 1 .771-.66h.485c3.149 0 5.613-1.279 6.334-4.977.3-1.54.146-2.825-.65-3.73a3.087 3.087 0 0 0-.801-.63z" fill="#009cde"/>
-          <path d="M19.238 6.5a7.764 7.764 0 0 0-.966-.194 12.24 12.24 0 0 0-1.96-.142h-5.94a.78.78 0 0 0-.771.66L8.198 17.83h2.217c5.31 0 9.47-2.07 10.68-8.29.046-.21.088-.42.127-.63-.617-.326-1.28-.42-1.984-.41z" fill="#fff"/>
-        </svg>
-        Donate via PayPal
-      </a>
-
-    </div>
-  </div>
-</div>
-
-<!-- ── LEGAL FOOTER ── -->
-<footer style="background:var(--card);border-top:1px solid var(--border);padding:1.25rem 1.5rem;text-align:center;font-family:var(--fontb);font-size:12px;color:var(--muted)">
-  <div style="max-width:800px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 16px">
-    <span>&copy; <span id="footer-year"></span> WheelQuiz. All rights reserved.</span>
-    <span style="color:var(--border)">&middot;</span>
-    <a href="privacy.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--muted)'">Privacy Policy</a>
-    <span style="color:var(--border)">&middot;</span>
-    <a href="terms.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--muted)'">Terms of Service</a>
-    <span style="color:var(--border)">&middot;</span>
-    <a href="copyright.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--muted)'">Copyright</a>
-    <span style="color:var(--border)">&middot;</span>
-    <a href="contact.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--muted)'">Contact Us</a>
-  </div>
-</footer>
-<script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
