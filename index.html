@@ -1,584 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WheelQuiz — Smart Classroom Wheel for Teachers & Students</title>
-<meta name="description" content="Free classroom spin wheel with scoring, reports and voice narration. Teacher and student modes.">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --blue:#1565C0;--blue-l:#E8F1FB;--green:#2E7D32;--green-l:#E8F5E9;
-  --red:#C62828;--red-l:#FFEBEE;--orange:#E65100;
-  --bg:#F4F6FB;--card:#FFFFFF;--border:#E4E7EF;
-  --text:#1A1D2E;--muted:#6B7280;
-  --shadow:0 2px 12px rgba(0,0,0,0.07);
-  --shadow-lg:0 8px 32px rgba(0,0,0,0.13);
-  --r:14px;--font:'Nunito',sans-serif;--fontb:'Nunito Sans',sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:100vh}
-
-/* ── TOPBAR ── */
-.topbar{
-  background:var(--card);border-bottom:1px solid var(--border);
-  padding:0 1.5rem;height:54px;display:flex;align-items:center;gap:12px;
-  position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,0.06);
-}
-.logo{font-family:var(--font);font-size:22px;font-weight:900;color:var(--blue);letter-spacing:-0.5px;text-decoration:none}
-.logo span{color:var(--green)}
-/* Mobile default: logo-group is an inline flex row (logo left, toggle right) */
-.topbar-logo-group{display:flex;align-items:center;gap:12px;}
-/* Desktop: WheelQuiz title centred on top row, Teacher/Student toggle centred below.
-   3-column grid: [empty spacer] [logo+toggle centred] [sound button right-aligned] */
-@media(min-width:768px){
-  .topbar{
-    display:grid;
-    grid-template-columns:0.55fr auto 1fr;
-    align-items:center;
-    height:auto;
-    padding:8px 1.5rem;
-    gap:0;
-  }
-  .topbar-logo-group{
-    grid-column:2;
-    display:flex;flex-direction:column;align-items:center;gap:5px;
-  }
-  .topbar .logo{font-size:24px;letter-spacing:-0.5px;}
-  .topbar-right{
-    grid-column:3;
-    justify-self:end;
-    margin-left:0;
-  }
-}
-.mode-toggle{display:flex;gap:4px;background:var(--bg);border-radius:30px;padding:4px;border:1px solid var(--border)}
-.mode-toggle button{
-  padding:5px 14px;border-radius:24px;border:none;font-size:12px;font-weight:700;
-  font-family:var(--fontb);cursor:pointer;color:var(--muted);background:transparent;transition:all 0.18s;
-}
-.mode-toggle button.active-t{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(21,101,192,0.3)}
-.mode-toggle button.active-s{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(46,125,50,0.3)}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
-.mute-btn{padding:3px 8px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.18s;white-space:nowrap;display:flex;align-items:center;gap:4px}
-.mute-btn.unmuted{background:#E8F5E9;border-color:#2E7D32;color:#2E7D32}
-.mute-btn.muted{background:#FAFAFA;border-color:#9E9E9E;color:#757575}
-/* keep narr-btn styles for per-wheel voice buttons */
-.narr-btn{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.15s;white-space:nowrap}
-
-/* ── MAIN LAYOUT ── */
-.main{display:grid;grid-template-columns:1fr 300px;gap:0;min-height:calc(100vh - 54px)}
-@media(min-width:768px){.main{min-height:calc(100vh - 76px)}.left-panel{min-height:calc(100vh - 76px)}}
-
-/* ── LEFT PANEL ── */
-.left-panel{
-  background:var(--card);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;min-height:calc(100vh - 54px);
-  position:relative;overflow:hidden;
-}
-
-/* Stage — where the active big wheel lives */
-.wheel-stage{
-  flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:flex-start;padding:0.75rem 1.5rem 0.5rem;
-  position:relative;
-  transition:background 0.4s;
-}
-.wheel-stage.neon-bg{
-  background:var(--card);
-}
-.wheel-stage.neon-bg .wheel-title-edit{color:var(--muted);border-bottom-color:var(--border);}
-.wheel-stage.neon-bg .wheel-title-edit:focus{color:var(--text);border-bottom-color:var(--blue);}
-.wheel-stage.neon-bg .result-pill{background:var(--bg);color:var(--text);border-color:var(--border);}
-.wheel-stage.neon-bg .spin-btn.t,.wheel-stage.neon-bg .spin-btn.s,.wheel-stage.neon-bg .spin-btn.p{box-shadow:0 4px 14px rgba(0,0,0,0.12);}
-.stage-label{
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
-  color:var(--muted);margin-bottom:8px;text-align:center;
-}
-.wheel-title-edit{
-  border:none;border-bottom:1.5px dashed var(--border);padding:4px 8px;
-  font-size:13px;font-family:var(--font);font-weight:700;color:var(--muted);
-  background:transparent;text-align:center;outline:none;cursor:text;
-  transition:border-color 0.15s,color 0.15s;margin-bottom:10px;width:100%;max-width:320px;
-}
-.wheel-title-edit:focus{border-bottom-color:var(--blue);color:var(--text)}
-
-/* Wheel canvas wrapper */
-.wheel-outer{
-  position:relative;width:100%;max-width:340px;
-}
-.wheel-outer canvas{width:100%;height:auto;display:block;border-radius:50%;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.12))}
-/* Center hub spin button overlay */
-.hub-spin-btn{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:13%;height:13%;min-width:32px;min-height:32px;
-  border-radius:50%;border:2.5px solid rgba(0,0,0,0.12);
-  background:#fff;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;line-height:1;
-  box-shadow:0 2px 8px rgba(0,0,0,0.18);
-  transition:transform 0.15s,box-shadow 0.15s,background 0.15s;
-  z-index:10;padding:0;
-}
-.hub-spin-btn:hover:not(:disabled){background:#f0f4ff;box-shadow:0 3px 12px rgba(21,101,192,0.25);transform:translate(-50%,-50%) scale(1.12)}
-.hub-spin-btn:active:not(:disabled){transform:translate(-50%,-50%) scale(0.95)}
-.hub-spin-btn:disabled{opacity:0.4;cursor:not-allowed}
-/* Pointer on right side pointing left */
-.wheel-outer::after{
-  content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);
-  width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;
-  border-right:26px solid #E53935;filter:drop-shadow(-2px 0 4px rgba(0,0,0,0.35));z-index:5;
-}
-.spin-btn{
-  margin-top:12px;width:100%;max-width:340px;padding:13px;
-  border-radius:12px;border:none;font-size:15px;font-family:var(--font);font-weight:800;
-  cursor:pointer;color:#fff;transition:opacity 0.15s,transform 0.1s;letter-spacing:0.02em;
-}
-.spin-btn:hover{opacity:0.9}.spin-btn:active{transform:scale(0.98)}
-.spin-btn:disabled{opacity:0.38;cursor:not-allowed}
-.spin-btn.t{background:linear-gradient(135deg,#1565C0,#0D47A1);box-shadow:0 4px 14px rgba(21,101,192,0.3)}
-.spin-btn.s{background:linear-gradient(135deg,#2E7D32,#1B5E20);box-shadow:0 4px 14px rgba(46,125,50,0.3)}
-.spin-btn.p{background:linear-gradient(135deg,#C62828,#B71C1C)}
-.result-pill{
-  margin-top:8px;width:100%;max-width:340px;text-align:center;
-  font-family:var(--font);font-size:16px;font-weight:800;color:var(--text);
-  background:var(--bg);border-radius:10px;padding:8px 12px;min-height:40px;
-  border:1px solid var(--border);transition:background 0.3s;
-}
-.result-pill.flash{background:#FFF9C4 !important}
-
-/* ── ARCHIVE STRIP ── */
-.archive-strip{
-  background:var(--bg);border-top:1px solid var(--border);
-  padding:10px 16px;display:flex;gap:10px;align-items:center;min-height:64px;
-  overflow-x:auto;
-}
-.archive-strip-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;flex-shrink:0}
-.archive-item{
-  display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;
-  background:var(--card);border:1px solid var(--border);border-radius:10px;
-  padding:6px 10px;cursor:pointer;transition:border-color 0.15s;
-}
-.archive-item:hover{border-color:var(--blue)}
-.archive-mini-canvas{width:44px;height:44px;border-radius:50%;display:block}
-.archive-name{font-size:10px;font-weight:700;color:var(--muted);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.archive-result{font-size:11px;font-weight:800;color:var(--text);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
-
-/* Wheel slide animations */
-.wheel-slide-out{animation:slideDown 0.45s cubic-bezier(.4,0,.2,1) forwards}
-.wheel-slide-in{animation:slideUp 0.45s cubic-bezier(.4,0,.2,1) forwards}
-@keyframes slideDown{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(60px) scale(0.7)}}
-@keyframes slideUp{from{opacity:0;transform:translateY(-60px) scale(0.8)}to{opacity:1;transform:translateY(0) scale(1)}}
-
-/* last man standing */
-.lms-mode-panel{
-  margin-bottom:10px;padding:10px 12px;border-radius:10px;
-  border:2px solid var(--green);background:var(--green-l);
-}
-.lms-mode-panel.off{border-color:var(--border);background:var(--card)}
-.lms-status{
-  margin-bottom:8px;padding:8px 10px;border-radius:8px;
-  border:1px solid var(--border);background:var(--card);font-size:12px;line-height:1.5;
-}
-.lms-status strong{color:var(--green)}
-.lms-elim-shake{animation:lmsShake 0.55s ease}
-.lms-elim-flash{animation:lmsFlash 0.55s ease}
-@keyframes lmsShake{
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-8px) rotate(-1deg)}
-  40%{transform:translateX(8px) rotate(1deg)}
-  60%{transform:translateX(-6px)}
-  80%{transform:translateX(6px)}
-}
-@keyframes lmsFlash{
-  0%,100%{filter:none}
-  50%{filter:drop-shadow(0 0 18px rgba(198,40,40,0.85))}
-}
-.score-row.eliminated .score-name{text-decoration:line-through;opacity:0.45}
-.score-row.eliminated .score-bar{opacity:0.2}
-
-/* ── RIGHT PANEL ── */
-.right-panel{
-  background:var(--bg);padding:1rem 1rem 1.5rem;
-  display:flex;flex-direction:column;gap:10px;overflow-y:auto;
-  max-height:calc(100vh - 54px);
-}
-
-/* Sound row */
-.sound-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px}
-.sound-row label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0}
-.sound-row select{flex:1;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:12px;font-family:var(--fontb);background:var(--card);color:var(--text);cursor:pointer;outline:none}
-
-/* Stats row */
-.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;box-shadow:var(--shadow)}
-.stat-val{font-family:var(--font);font-size:26px;font-weight:900;color:var(--text)}
-.stat-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:1px}
-
-/* Answer buttons */
-.ans-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ans-btn{padding:11px 8px;border-radius:10px;border:none;font-size:13px;font-family:var(--font);font-weight:800;cursor:pointer;color:#fff;transition:opacity 0.15s,transform 0.1s;line-height:1.4}
-.ans-btn:hover{opacity:0.9}.ans-btn:active{transform:scale(0.97)}
-.ans-btn:disabled{opacity:0.3;cursor:not-allowed}
-.ans-btn.ok{background:linear-gradient(135deg,#2E7D32,#1B5E20);box-shadow:0 3px 10px rgba(46,125,50,0.25)}
-.ans-btn.no{background:linear-gradient(135deg,#C62828,#B71C1C);box-shadow:0 3px 10px rgba(198,40,40,0.25)}
-
-/* Scoreboard */
-.scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
-.sb-title{font-family:var(--font);font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.score-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)}
-.score-row:last-child{border-bottom:none}
-.score-name{flex:1;font-size:12px;font-weight:700;color:var(--text)}
-.score-bar-bg{flex:2;height:9px;background:var(--bg);border-radius:5px;overflow:hidden}
-.score-bar{height:100%;border-radius:5px;transition:width 0.5s cubic-bezier(.34,1.56,.64,1)}
-.score-pts{font-size:11px;font-weight:700;min-width:36px;text-align:right;color:var(--text)}
-
-/* Setup panel (right side) */
-.setup-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px}
-.setup-panel h4{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px}
-.setup-group{margin-bottom:10px}
-.setup-group label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px}
-.setup-group input,.setup-group textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fontb);background:var(--bg);color:var(--text);resize:vertical;outline:none;transition:border-color 0.15s}
-.setup-group input:focus,.setup-group textarea:focus{border-color:var(--blue);background:var(--card)}
-.setup-group textarea{min-height:70px}
-.setup-hint{font-size:10px;color:var(--muted);margin-top:3px}
-.start-btn{width:100%;padding:11px;border-radius:10px;border:none;font-size:14px;font-family:var(--font);font-weight:800;cursor:pointer;color:#fff;transition:opacity 0.15s,transform 0.1s}
-.start-btn:hover{opacity:0.9}.start-btn:active{transform:scale(0.98)}
-.start-btn.t{background:linear-gradient(135deg,#1565C0,#0D47A1);box-shadow:0 4px 14px rgba(21,101,192,0.28)}
-.start-btn.s{background:linear-gradient(135deg,#2E7D32,#1B5E20);box-shadow:0 4px 14px rgba(46,125,50,0.28)}
-
-/* Dynamic wheel config cards */
-.wheel-config{border:1.5px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color 0.15s}
-.wheel-config.active{border-color:var(--blue)}
-.wheel-config-header{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);cursor:pointer;user-select:none}
-.wheel-config-header:hover{background:#EEF2FF}
-.wheel-check{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;flex-shrink:0}
-.wheel-config-header input.wheel-name-input{flex:1;border:none;background:transparent;font-size:13px;font-family:var(--font);font-weight:700;color:var(--text);outline:none;cursor:text;min-width:0}
-.wheel-config-header input.wheel-name-input::placeholder{color:var(--muted)}
-.wheel-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;flex-shrink:0}
-.wheel-config-body{padding:8px 10px 10px;display:none}
-.wheel-config.open .wheel-config-body{display:block}
-.wheel-color-pick{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}
-.color-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.12s,transform 0.12s;flex-shrink:0}
-.color-dot:hover,.color-dot.sel{border-color:var(--text);transform:scale(1.2)}
-.wheel-config-footer{display:flex;align-items:center;gap:6px;padding:6px 10px 8px;font-size:10px;color:var(--muted)}
-.add-wheel-btn{display:flex;align-items:center;gap:6px;width:100%;padding:8px 10px;border-radius:9px;border:1.5px dashed var(--border);background:transparent;font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--muted);transition:all 0.15s;margin-bottom:10px}
-.add-wheel-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
-
-.link-btn{width:100%;padding:9px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--text);text-align:center;transition:background 0.15s}
-.link-btn:hover{background:var(--bg)}
-
-/* Report modal */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,20,0.55);z-index:200;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;backdrop-filter:blur(4px)}
-.modal-overlay.show{display:flex}
-.modal-card{background:var(--card);border-radius:20px;padding:1.75rem;max-width:600px;width:100%;box-shadow:var(--shadow-lg);animation:pop 0.22s cubic-bezier(.34,1.56,.64,1)}
-@keyframes pop{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
-.modal-header h3{font-family:var(--font);font-size:18px;font-weight:900}
-.modal-close{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
-.rep-section{background:var(--bg);border-radius:12px;padding:1rem;margin-bottom:12px}
-.rep-section h4{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)}
-.rep-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
-.rep-row:last-child{border-bottom:none}
-.rep-row span:first-child{color:var(--muted)}
-.rep-row span:last-child{font-weight:700;color:var(--text)}
-.dl-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.dl-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--text);transition:background 0.15s}
-.dl-btn:hover{background:var(--bg)}
-
-/* Win overlay */
-.ov{display:none;position:fixed;inset:0;background:rgba(10,10,20,0.5);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
-.ov.show{display:flex}
-.ov-card{background:var(--card);border-radius:22px;padding:2rem 1.5rem;text-align:center;max-width:310px;width:92%;animation:pop 0.22s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow-lg);border-top:4px solid var(--blue)}
-.ov-emoji{font-size:50px;margin-bottom:10px}
-.ov-title{font-family:var(--font);font-size:21px;font-weight:900;margin-bottom:5px;color:var(--text)}
-.ov-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.55;white-space:pre-line}
-.ov-close{padding:9px 28px;border-radius:11px;border:none;background:linear-gradient(135deg,#1565C0,#0D47A1);color:#fff;font-size:14px;font-family:var(--font);font-weight:800;cursor:pointer}
-
-/* Confetti */
-#cf{position:fixed;inset:0;pointer-events:none;z-index:400;overflow:hidden}
-.cp{position:absolute;opacity:0;animation:cffall 1.7s ease forwards}
-@keyframes cffall{0%{transform:translateY(-30px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(900deg);opacity:0}}
-
-/* FAQ section on homepage */
-.faq-wrap{background:var(--bg);padding:1.5rem 1.5rem 2rem}
-.faq-tabs{display:flex;gap:6px;margin-bottom:1rem}
-.faq-tab{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:var(--fontb);transition:all 0.15s}
-.faq-tab.at{background:var(--blue);color:#fff;border-color:var(--blue)}
-.faq-tab.as{background:var(--green);color:#fff;border-color:var(--green)}
-.faq-list{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;max-width:560px}
-.faq-item{border-bottom:1px solid var(--border)}
-.faq-item:last-child{border-bottom:none}
-.faq-q{font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--text);padding:12px 14px;transition:background 0.1s}
-.faq-q:hover{background:var(--bg)}
-.faq-q .arr{transition:transform 0.2s;flex-shrink:0;color:var(--muted)}
-.faq-q.open .arr{transform:rotate(180deg)}
-.faq-a{font-size:12px;color:var(--muted);line-height:1.65;display:none;padding:0 14px 12px}
-.faq-a.open{display:block}
-
-/* ── ELIMINATE SPIN BEFORE toggle row ── */
-.esb-toggle-row{transition:border-color 0.15s,background 0.15s}
-.esb-toggle-row:hover{filter:brightness(0.97)}
-
-@media(max-width:680px){
-  .main{grid-template-columns:1fr}
-  .right-panel{max-height:none}
-  .left-panel{min-height:auto}
-}
-
-/* ══ AUTO ANSWER MCQ — overlay & button styles ══════════════════ */
-.mcq-ov{
-  display:none;position:fixed;inset:0;z-index:200;
-  background:rgba(10,14,30,0.82);backdrop-filter:blur(6px);
-  align-items:center;justify-content:center;
-}
-.mcq-ov.show{display:flex;}
-.mcq-ov-card{
-  background:#fff;border-radius:20px;padding:2rem 2rem 1.5rem;
-  max-width:520px;width:92%;box-shadow:0 12px 48px rgba(0,0,0,0.28);
-  text-align:center;border-top:5px solid var(--blue);
-}
-.mcq-ov-student{
-  font-size:12px;font-weight:700;color:var(--muted);
-  text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;
-}
-.mcq-ov-question{
-  font-family:var(--font);font-size:18px;font-weight:800;
-  color:var(--text);line-height:1.4;margin-bottom:1.2rem;
-}
-.mcq-ov-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;
-}
-.mcq-choice-btn{
-  display:flex;align-items:center;gap:10px;
-  padding:12px 14px;border-radius:12px;border:2px solid var(--border);
-  background:var(--bg);cursor:pointer;text-align:left;
-  font-family:var(--fontb);transition:all 0.14s;
-}
-.mcq-choice-btn:hover:not(:disabled){
-  border-color:var(--blue);background:var(--blue-l);transform:translateY(-1px);
-}
-.mcq-choice-label{
-  width:28px;height:28px;border-radius:50%;background:var(--blue);
-  color:#fff;font-weight:800;font-size:13px;font-family:var(--font);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.mcq-choice-text{font-size:14px;font-weight:700;color:var(--text);}
-.mcq-choice-disabled{opacity:0.55;cursor:not-allowed;}
-.mcq-choice-correct{border-color:#2E7D32!important;background:#E8F5E9!important;}
-.mcq-choice-correct .mcq-choice-label{background:#2E7D32;}
-.mcq-choice-wrong{border-color:#C62828!important;background:#FFEBEE!important;}
-.mcq-choice-wrong .mcq-choice-label{background:#C62828;}
-.mcq-choice-reveal{border-color:#2E7D32!important;background:#E8F5E9!important;opacity:1!important;}
-.mcq-choice-reveal .mcq-choice-label{background:#2E7D32;}
-.mcq-ov-result{
-  font-size:18px;font-weight:800;font-family:var(--font);
-  margin-top:8px;display:none;
-}
-/* ══ END AUTO ANSWER MCQ ══════════════════════════════════════════ */
-</style>
-</head>
-<body>
-<div id="cf"></div>
-
-<div class="topbar">
-  <div class="topbar-logo-group">
-    <span class="logo">Wheel<span>Quiz</span></span>
-    <div class="mode-toggle">
-      <button id="btn-t" class="active-t" onclick="switchMode('teacher')">👨‍🏫 Teacher</button>
-      <button id="btn-s" onclick="switchMode('student')">👨‍🎓 Student</button>
-    </div>
-  </div>
-  <div class="topbar-right">
-    <button class="mute-btn unmuted" id="mute-btn" onclick="toggleMute()" title="Toggle all sound &amp; voice">🔊 Sound</button>
-  </div>
-</div>
-
-<div class="main" id="main-layout">
-
-  <div class="left-panel">
-    <div class="wheel-stage" id="wheel-stage">
-      <input class="wheel-title-edit" id="active-wheel-title" value="📚 Wheel 1 — Topic">
-      <div class="wheel-outer" id="wheel-outer-wrap">
-        <canvas id="active-canvas" width="340" height="340"></canvas>
-        <button class="hub-spin-btn" id="hub-spin-btn" onclick="spinActive()" title="Spin the wheel">⟳</button>
-      </div>
-      <button class="spin-btn t" id="main-spin-btn" onclick="spinActive()">⟳ Spin</button>
-      <div class="result-pill" id="main-result">Spin to begin</div>
-    </div>
-
-    <div class="archive-strip" id="archive-strip">
-      <span class="archive-strip-label">📌 History</span>
-      <span style="font-size:12px;color:var(--muted);font-style:italic" id="archive-empty">Wheels you've spun will appear here</span>
-    </div>
-  </div>
-
-  <div class="right-panel" id="right-panel">
-    <div id="ctrl-teacher">
-      <div class="ans-row">
-        <button class="ans-btn ok" id="t-ok" onclick="tMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
-        <button class="ans-btn no" id="t-no" onclick="tMark(false)" disabled>✗ Wrong<br><small>0 pts</small></button>
-      </div>
-      <div class="stat-row" style="grid-template-columns:repeat(4,1fr)">
-        <div class="stat-box"><div class="stat-val" id="t-r">0</div><div class="stat-lbl">Rounds</div></div>
-        <div class="stat-box"><div class="stat-val" id="t-c" style="color:#2E7D32">0</div><div class="stat-lbl">Correct</div></div>
-        <div class="stat-box"><div class="stat-val" id="t-w" style="color:#C62828">0</div><div class="stat-lbl">Wrong</div></div>
-        <div class="stat-box"><div class="stat-val" id="t-p" style="color:#E65100">0</div><div class="stat-lbl">Punish</div></div>
-      </div>
-      <!-- ── Score Setting Widget ── -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-        <div style="text-align:center">
-          <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ Correct &nbsp;<span id="t-correct-badge">+10 pts</span></div>
-          <div style="display:flex;align-items:center;border:2px solid var(--blue);border-radius:10px;overflow:hidden;background:var(--card)">
-            <input id="t-score-correct" type="number" value="10" min="1" max="999"
-              oninput="updateScoreSettings()"
-              style="flex:1;border:none;outline:none;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:transparent;text-align:center;min-width:0">
-          </div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px">✗ Wrong &nbsp;<span id="t-wrong-badge">0 pts</span></div>
-          <div style="display:flex;align-items:center;border:2px solid var(--blue);border-radius:10px;overflow:hidden;background:var(--card)">
-            <input id="t-score-wrong" type="number" value="0" min="-999" max="999"
-              oninput="updateScoreSettings()"
-              style="flex:1;border:none;outline:none;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:transparent;text-align:center;min-width:0">
-          </div>
-        </div>
-      </div>
-      <div class="scoreboard">
-        <div class="sb-title" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-          <span>🏆 Scoreboard</span>
-          <span style="display:flex;gap:5px;flex-shrink:0">
-            <button onclick="copyScore()" title="Copy score to clipboard"
-              style="padding:3px 9px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.15s"
-              onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
-              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📋 Copy</button>
-            <button onclick="shareScore()" title="Share score"
-              style="padding:3px 9px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all 0.15s"
-              onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
-              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📤 Share</button>
-          </span>
-        </div>
-        <div id="t-sb"><div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Start the game to see scores</div></div>
-      </div>
-      <button class="link-btn" onclick="showReport('teacher')">📊 View &amp; download report</button>
-      <div class="setup-panel">
-        <h4>⚙️ Class setup</h4>
-        <div class="setup-group">
-          <label>Class name</label>
-          <input id="t-cn" type="text" value="Math Grade 5 — Class 3A">
-        </div>
-
-        <div id="t-wheel-configs"></div>
-        <button class="start-btn t" onclick="startTeacher()">💾 Save settings &amp; start</button>
-      </div>
-    </div>
-
-    <div id="ctrl-student" style="display:none">
-      <div class="ans-row">
-        <button class="ans-btn ok" id="s-ok" onclick="sMark(true)" disabled>✓ Correct<br><small>+10 pts</small></button>
-        <button class="ans-btn no" id="s-no" onclick="sMark(false)" disabled>✗ Wrong<br><small>Spin W3!</small></button>
-      </div>
-      <div class="stat-row" style="grid-template-columns:repeat(4,1fr)">
-        <div class="stat-box"><div class="stat-val" id="s-r">0</div><div class="stat-lbl">Rounds</div></div>
-        <div class="stat-box"><div class="stat-val" id="s-c" style="color:#2E7D32">0</div><div class="stat-lbl">Correct</div></div>
-        <div class="stat-box"><div class="stat-val" id="s-w" style="color:#C62828">0</div><div class="stat-lbl">Wrong</div></div>
-        <div class="stat-box"><div class="stat-val" id="s-p" style="color:#E65100">0</div><div class="stat-lbl">Punish</div></div>
-      </div>
-      <!-- ── Student Score Setting Widget ── -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-        <div style="text-align:center">
-          <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ Correct &nbsp;<span id="s-correct-badge">+10 pts</span></div>
-          <div style="display:flex;align-items:center;border:2px solid var(--green);border-radius:10px;overflow:hidden;background:var(--card)">
-            <input id="s-score-correct" type="number" value="10" min="1" max="999"
-              oninput="updateStudentScoreSettings()"
-              style="flex:1;border:none;outline:none;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:transparent;text-align:center;min-width:0">
-          </div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px">✗ Wrong &nbsp;<span id="s-wrong-badge">0 pts</span></div>
-          <div style="display:flex;align-items:center;border:2px solid var(--green);border-radius:10px;overflow:hidden;background:var(--card)">
-            <input id="s-score-wrong" type="number" value="0" min="-999" max="999"
-              oninput="updateStudentScoreSettings()"
-              style="flex:1;border:none;outline:none;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:transparent;text-align:center;min-width:0">
-          </div>
-        </div>
-      </div>
-      <div class="scoreboard">
-        <div class="sb-title">🏆 Leaderboard</div>
-        <div id="s-sb"><div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Start the game to see scores</div></div>
-      </div>
-      <button class="link-btn" onclick="showReport('student')">📊 View session results</button>
-      <!-- last man standing -->
-      <div id="lms-status-panel" class="lms-status" style="display:none">
-        <strong>🏆 Last Student Standing</strong><br>
-        <span id="lms-status-text">Enable in Game setup, then save &amp; start.</span>
-      </div>
-      <div class="setup-panel">
-        <h4>⚙️ Game setup</h4>
-        <div id="lms-mode-panel" class="lms-mode-panel off">
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
-            <input type="checkbox" id="lms-mode-chk" onchange="toggleLastManStandingMode(this.checked)"
-              style="margin-top:2px;width:15px;height:15px;accent-color:var(--green);flex-shrink:0">
-            <span>
-              <span style="font-size:12px;font-weight:800;color:var(--green)">🏆 LAST STUDENT STANDING</span>
-              <span style="display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4">
-        
-              </span>
-            </span>
-          </label>
-        </div>
-        <!-- team vs team -->
-        <div id="tvv-mode-panel" class="lms-mode-panel off" style="margin-top:8px">
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
-            <input type="checkbox" id="tvv-mode-chk" onchange="toggleTeamVsTeamMode(this.checked)"
-              style="margin-top:2px;width:15px;height:15px;accent-color:var(--blue);flex-shrink:0">
-            <span>
-              <span style="font-size:12px;font-weight:900;color:var(--blue)">⚔️ TEAM VS TEAM</span>
-              </span>
-            </span>
-          </label>
-        </div>
-        <div id="tvv-status-panel" class="lms-status" style="display:none;margin-bottom:8px">
-          <strong>⚔️ Team vs Team</strong><br>
-          <span id="tvv-status-text">Enable in Game setup, then save &amp; start.</span>
-        </div>
-        <div id="s-wheel-configs"></div>
-        <button class="start-btn s" onclick="startStudent()">💾 Save settings &amp; start</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="report-modal">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3 id="modal-title">📊 Session Report</h3>
-      <button class="modal-close" onclick="closeReport()">✕ Close</button>
-    </div>
-    <div id="modal-body"></div>
-  </div>
-</div>
-
-<div class="ov" id="ov">
-  <div class="ov-card" id="ov-card">
-    <div class="ov-emoji" id="ov-e"></div>
-    <div class="ov-title" id="ov-t"></div>
-    <div class="ov-sub" id="ov-s"></div>
-    <button class="ov-close" id="ov-btn" onclick="closeOv()">Continue</button>
-  </div>
-</div>
-
-<!-- AUTO ANSWER MCQ — MCQ full-screen overlay -->
-<div class="mcq-ov" id="mcq-ov">
-  <div class="mcq-ov-card">
-    <div class="mcq-ov-student" id="mcq-ov-student"></div>
-    <div class="mcq-ov-question" id="mcq-ov-question"></div>
-    <div class="mcq-ov-grid" id="mcq-ov-grid"></div>
-    <div class="mcq-ov-result" id="mcq-ov-result"></div>
-  </div>
-</div>
-
-<script>
-/* ══════════════════════════════════════════════════════════════════
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WheelQuiz — Smart Classroom Wheel for Teachers & Students</title><meta name="description" content="Free classroom spin wheel with scoring, reports and voice narration. Teacher and student modes."><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><style>:root{--blue:#1565C0;--blue-l:#E8F1FB;--green:#2E7D32;--green-l:#E8F5E9;--red:#C62828;--red-l:#FFEBEE;--orange:#E65100;--bg:#F4F6FB;--card:#FFFFFF;--border:#E4E7EF;--text:#1A1D2E;--muted:#6B7280;--shadow:0 2px 12px rgba(0,0,0,0.07);--shadow-lg:0 8px 32px rgba(0,0,0,0.13);--r:14px;--font:'Nunito',sans-serif;--fontb:'Nunito Sans',sans-serif}*{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--fontb);background:var(--bg);color:var(--text);min-height:100vh}.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 1.5rem;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,.06)}.logo{font-family:var(--font);font-size:22px;font-weight:900;color:var(--blue);letter-spacing:-.5px;text-decoration:none}.logo span{color:var(--green)}.topbar-logo-group{display:flex;align-items:center;gap:12px}@media(min-width:768px){.topbar{display:grid;grid-template-columns:.55fr auto 1fr;align-items:center;height:auto;padding:8px 1.5rem;gap:0}.topbar-logo-group{grid-column:2;display:flex;flex-direction:column;align-items:center;gap:5px}.topbar .logo{font-size:24px;letter-spacing:-.5px}.topbar-right{grid-column:3;justify-self:end;margin-left:0}}.mode-toggle{display:flex;gap:4px;background:var(--bg);border-radius:30px;padding:4px;border:1px solid var(--border)}.mode-toggle button{padding:5px 14px;border-radius:24px;border:none;font-size:12px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);background:0 0;transition:all .18s}.mode-toggle button.active-t{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(21,101,192,.3)}.mode-toggle button.active-s{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(46,125,50,.3)}.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}.mute-btn{padding:3px 8px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:4px}.mute-btn.unmuted{background:#e8f5e9;border-color:#2e7d32;color:#2e7d32}.mute-btn.muted{background:#fafafa;border-color:#9e9e9e;color:#757575}.narr-btn{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap}.main{display:grid;grid-template-columns:1fr 300px;gap:0;min-height:calc(100vh - 54px)}@media(min-width:768px){.main{min-height:calc(100vh - 76px)}.left-panel{min-height:calc(100vh - 76px)}}.left-panel{background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:calc(100vh - 54px);position:relative;overflow:hidden}.wheel-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:.75rem 1.5rem .5rem;position:relative;transition:background .4s}.wheel-stage.neon-bg{background:var(--card)}.wheel-stage.neon-bg .wheel-title-edit{color:var(--muted);border-bottom-color:var(--border)}.wheel-stage.neon-bg .wheel-title-edit:focus{color:var(--text);border-bottom-color:var(--blue)}.wheel-stage.neon-bg .result-pill{background:var(--bg);color:var(--text);border-color:var(--border)}.wheel-stage.neon-bg .spin-btn.p,.wheel-stage.neon-bg .spin-btn.s,.wheel-stage.neon-bg .spin-btn.t{box-shadow:0 4px 14px rgba(0,0,0,.12)}.stage-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;text-align:center}.wheel-title-edit{border:none;border-bottom:1.5px dashed var(--border);padding:4px 8px;font-size:13px;font-family:var(--font);font-weight:700;color:var(--muted);background:0 0;text-align:center;outline:0;cursor:text;transition:border-color .15s,color .15s;margin-bottom:10px;width:100%;max-width:320px}.wheel-title-edit:focus{border-bottom-color:var(--blue);color:var(--text)}.wheel-outer{position:relative;width:100%;max-width:340px}.wheel-outer canvas{width:100%;height:auto;display:block;border-radius:50%;filter:drop-shadow(0 4px 16px rgba(0,0,0,.12))}.hub-spin-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:13%;height:13%;min-width:32px;min-height:32px;border-radius:50%;border:2.5px solid rgba(0,0,0,.12);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s,background .15s;z-index:10;padding:0}.hub-spin-btn:hover:not(:disabled){background:#f0f4ff;box-shadow:0 3px 12px rgba(21,101,192,.25);transform:translate(-50%,-50%) scale(1.12)}.hub-spin-btn:active:not(:disabled){transform:translate(-50%,-50%) scale(.95)}.hub-spin-btn:disabled{opacity:.4;cursor:not-allowed}.wheel-outer::after{content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;border-right:26px solid #e53935;filter:drop-shadow(-2px 0 4px rgba(0,0,0,.35));z-index:5}.spin-btn{margin-top:12px;width:100%;max-width:340px;padding:13px;border-radius:12px;border:none;font-size:15px;font-family:var(--font);font-weight:800;cursor:pointer;color:#fff;transition:opacity .15s,transform .1s;letter-spacing:.02em}.spin-btn:hover{opacity:.9}.spin-btn:active{transform:scale(.98)}.spin-btn:disabled{opacity:.38;cursor:not-allowed}.spin-btn.t{background:linear-gradient(135deg,#1565c0,#0d47a1);box-shadow:0 4px 14px rgba(21,101,192,.3)}.spin-btn.s{background:linear-gradient(135deg,#2e7d32,#1b5e20);box-shadow:0 4px 14px rgba(46,125,50,.3)}.spin-btn.p{background:linear-gradient(135deg,#c62828,#b71c1c)}.result-pill{margin-top:8px;width:100%;max-width:340px;text-align:center;font-family:var(--font);font-size:16px;font-weight:800;color:var(--text);background:var(--bg);border-radius:10px;padding:8px 12px;min-height:40px;border:1px solid var(--border);transition:background .3s}.result-pill.flash{background:#fff9c4!important}.archive-strip{background:var(--bg);border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;align-items:center;min-height:64px;overflow-x:auto}.archive-strip-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;flex-shrink:0}.archive-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;transition:border-color .15s}.archive-item:hover{border-color:var(--blue)}.archive-mini-canvas{width:44px;height:44px;border-radius:50%;display:block}.archive-name{font-size:10px;font-weight:700;color:var(--muted);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.archive-result{font-size:11px;font-weight:800;color:var(--text);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}.wheel-slide-out{animation:slideDown .45s cubic-bezier(.4,0,.2,1) forwards}.wheel-slide-in{animation:slideUp .45s cubic-bezier(.4,0,.2,1) forwards}@keyframes slideDown{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(60px) scale(.7)}}@keyframes slideUp{from{opacity:0;transform:translateY(-60px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}.lms-mode-panel{margin-bottom:10px;padding:10px 12px;border-radius:10px;border:2px solid var(--green);background:var(--green-l)}.lms-mode-panel.off{border-color:var(--border);background:var(--card)}.lms-status{margin-bottom:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:12px;line-height:1.5}.lms-status strong{color:var(--green)}.lms-elim-shake{animation:lmsShake .55s ease}.lms-elim-flash{animation:lmsFlash .55s ease}@keyframes lmsShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-1deg)}40%{transform:translateX(8px) rotate(1deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}@keyframes lmsFlash{0%,100%{filter:none}50%{filter:drop-shadow(0 0 18px rgba(198,40,40,.85))}}.score-row.eliminated .score-name{text-decoration:line-through;opacity:.45}.score-row.eliminated .score-bar{opacity:.2}.right-panel{background:var(--bg);padding:1rem 1rem 1.5rem;display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height:calc(100vh - 54px)}.sound-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px}.sound-row label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}.sound-row select{flex:1;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:12px;font-family:var(--fontb);background:var(--card);color:var(--text);cursor:pointer;outline:0}.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;box-shadow:var(--shadow)}.stat-val{font-family:var(--font);font-size:26px;font-weight:900;color:var(--text)}.stat-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}.ans-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ans-btn{padding:11px 8px;border-radius:10px;border:none;font-size:13px;font-family:var(--font);font-weight:800;cursor:pointer;color:#fff;transition:opacity .15s,transform .1s;line-height:1.4}.ans-btn:hover{opacity:.9}.ans-btn:active{transform:scale(.97)}.ans-btn:disabled{opacity:.3;cursor:not-allowed}.ans-btn.ok{background:linear-gradient(135deg,#2e7d32,#1b5e20);box-shadow:0 3px 10px rgba(46,125,50,.25)}.ans-btn.no{background:linear-gradient(135deg,#c62828,#b71c1c);box-shadow:0 3px 10px rgba(198,40,40,.25)}.scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow)}.sb-title{font-family:var(--font);font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px}.score-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)}.score-row:last-child{border-bottom:none}.score-name{flex:1;font-size:12px;font-weight:700;color:var(--text)}.score-bar-bg{flex:2;height:9px;background:var(--bg);border-radius:5px;overflow:hidden}.score-bar{height:100%;border-radius:5px;transition:width .5s cubic-bezier(.34,1.56,.64,1)}.score-pts{font-size:11px;font-weight:700;min-width:36px;text-align:right;color:var(--text)}.setup-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px}.setup-panel h4{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}.setup-group{margin-bottom:10px}.setup-group label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px}.setup-group input,.setup-group textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fontb);background:var(--bg);color:var(--text);resize:vertical;outline:0;transition:border-color .15s}.setup-group input:focus,.setup-group textarea:focus{border-color:var(--blue);background:var(--card)}.setup-group textarea{min-height:70px}.setup-hint{font-size:10px;color:var(--muted);margin-top:3px}.start-btn{width:100%;padding:11px;border-radius:10px;border:none;font-size:14px;font-family:var(--font);font-weight:800;cursor:pointer;color:#fff;transition:opacity .15s,transform .1s}.start-btn:hover{opacity:.9}.start-btn:active{transform:scale(.98)}.start-btn.t{background:linear-gradient(135deg,#1565c0,#0d47a1);box-shadow:0 4px 14px rgba(21,101,192,.28)}.start-btn.s{background:linear-gradient(135deg,#2e7d32,#1b5e20);box-shadow:0 4px 14px rgba(46,125,50,.28)}.wheel-config{border:1.5px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color .15s}.wheel-config.active{border-color:var(--blue)}.wheel-config-header{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);cursor:pointer;user-select:none}.wheel-config-header:hover{background:#eef2ff}.wheel-check{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;flex-shrink:0}.wheel-config-header input.wheel-name-input{flex:1;border:none;background:0 0;font-size:13px;font-family:var(--font);font-weight:700;color:var(--text);outline:0;cursor:text;min-width:0}.wheel-config-header input.wheel-name-input::placeholder{color:var(--muted)}.wheel-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;flex-shrink:0}.wheel-config-body{padding:8px 10px 10px;display:none}.wheel-config.open .wheel-config-body{display:block}.wheel-color-pick{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}.color-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color .12s,transform .12s;flex-shrink:0}.color-dot.sel,.color-dot:hover{border-color:var(--text);transform:scale(1.2)}.wheel-config-footer{display:flex;align-items:center;gap:6px;padding:6px 10px 8px;font-size:10px;color:var(--muted)}.add-wheel-btn{display:flex;align-items:center;gap:6px;width:100%;padding:8px 10px;border-radius:9px;border:1.5px dashed var(--border);background:0 0;font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s;margin-bottom:10px}.add-wheel-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}.link-btn{width:100%;padding:9px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--text);text-align:center;transition:background .15s}.link-btn:hover{background:var(--bg)}.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,20,.55);z-index:200;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;backdrop-filter:blur(4px)}.modal-overlay.show{display:flex}.modal-card{background:var(--card);border-radius:20px;padding:1.75rem;max-width:600px;width:100%;box-shadow:var(--shadow-lg);animation:pop .22s cubic-bezier(.34,1.56,.64,1)}@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}.modal-header h3{font-family:var(--font);font-size:18px;font-weight:900}.modal-close{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}.rep-section{background:var(--bg);border-radius:12px;padding:1rem;margin-bottom:12px}.rep-section h4{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)}.rep-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}.rep-row:last-child{border-bottom:none}.rep-row span:first-child{color:var(--muted)}.rep-row span:last-child{font-weight:700;color:var(--text)}.dl-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.dl-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;color:var(--text);transition:background .15s}.dl-btn:hover{background:var(--bg)}.ov{display:none;position:fixed;inset:0;background:rgba(10,10,20,.5);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(3px)}.ov.show{display:flex}.ov-card{background:var(--card);border-radius:22px;padding:2rem 1.5rem;text-align:center;max-width:310px;width:92%;animation:pop .22s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow-lg);border-top:4px solid var(--blue)}.ov-emoji{font-size:50px;margin-bottom:10px}.ov-title{font-family:var(--font);font-size:21px;font-weight:900;margin-bottom:5px;color:var(--text)}.ov-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.55;white-space:pre-line}.ov-close{padding:9px 28px;border-radius:11px;border:none;background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;font-size:14px;font-family:var(--font);font-weight:800;cursor:pointer}#cf{position:fixed;inset:0;pointer-events:none;z-index:400;overflow:hidden}.cp{position:absolute;opacity:0;animation:cffall 1.7s ease forwards}@keyframes cffall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(900deg);opacity:0}}.faq-wrap{background:var(--bg);padding:1.5rem 1.5rem 2rem}.faq-tabs{display:flex;gap:6px;margin-bottom:1rem}.faq-tab{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:var(--fontb);transition:all .15s}.faq-tab.at{background:var(--blue);color:#fff;border-color:var(--blue)}.faq-tab.as{background:var(--green);color:#fff;border-color:var(--green)}.faq-list{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;max-width:560px}.faq-item{border-bottom:1px solid var(--border)}.faq-item:last-child{border-bottom:none}.faq-q{font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--text);padding:12px 14px;transition:background .1s}.faq-q:hover{background:var(--bg)}.faq-q .arr{transition:transform .2s;flex-shrink:0;color:var(--muted)}.faq-q.open .arr{transform:rotate(180deg)}.faq-a{font-size:12px;color:var(--muted);line-height:1.65;display:none;padding:0 14px 12px}.faq-a.open{display:block}.esb-toggle-row{transition:border-color .15s,background .15s}.esb-toggle-row:hover{filter:brightness(.97)}@media(max-width:680px){.main{grid-template-columns:1fr}.right-panel{max-height:none}.left-panel{min-height:auto}}.mcq-ov{display:none;position:fixed;inset:0;z-index:200;background:rgba(10,14,30,.82);backdrop-filter:blur(6px);align-items:center;justify-content:center}.mcq-ov.show{display:flex}.mcq-ov-card{background:#fff;border-radius:20px;padding:2rem 2rem 1.5rem;max-width:520px;width:92%;box-shadow:0 12px 48px rgba(0,0,0,.28);text-align:center;border-top:5px solid var(--blue)}.mcq-ov-student{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}.mcq-ov-question{font-family:var(--font);font-size:18px;font-weight:800;color:var(--text);line-height:1.4;margin-bottom:1.2rem}.mcq-ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}.mcq-choice-btn{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--bg);cursor:pointer;text-align:left;font-family:var(--fontb);transition:all .14s}.mcq-choice-btn:hover:not(:disabled){border-color:var(--blue);background:var(--blue-l);transform:translateY(-1px)}.mcq-choice-label{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:13px;font-family:var(--font);display:flex;align-items:center;justify-content:center;flex-shrink:0}.mcq-choice-text{font-size:14px;font-weight:700;color:var(--text)}.mcq-choice-disabled{opacity:.55;cursor:not-allowed}.mcq-choice-correct{border-color:#2e7d32!important;background:#e8f5e9!important}.mcq-choice-correct .mcq-choice-label{background:#2e7d32}.mcq-choice-wrong{border-color:#c62828!important;background:#ffebee!important}.mcq-choice-wrong .mcq-choice-label{background:#c62828}.mcq-choice-reveal{border-color:#2e7d32!important;background:#e8f5e9!important;opacity:1!important}.mcq-choice-reveal .mcq-choice-label{background:#2e7d32}.mcq-ov-result{font-size:18px;font-weight:800;font-family:var(--font);margin-top:8px;display:none}</style></head><body><div id="cf"></div><div class="topbar"><div class="topbar-logo-group"><span class="logo">Wheel<span>Quiz</span></span><div class="mode-toggle"><button id="btn-t" class="active-t" onclick="switchMode(&#34;teacher&#34;)">👨‍🏫 Teacher</button> <button id="btn-s" onclick="switchMode(&#34;student&#34;)">👨‍🎓 Student</button></div></div><div class="topbar-right"><button class="mute-btn unmuted" id="mute-btn" onclick="toggleMute()" title="Toggle all sound &amp; voice">🔊 Sound</button></div></div><div class="main" id="main-layout"><div class="left-panel"><div class="wheel-stage" id="wheel-stage"><input class="wheel-title-edit" id="active-wheel-title" value="📚 Wheel 1 — Topic"><div class="wheel-outer" id="wheel-outer-wrap"><canvas id="active-canvas" width="340" height="340"></canvas><button class="hub-spin-btn" id="hub-spin-btn" onclick="spinActive()" title="Spin the wheel">⟳</button></div><button class="spin-btn t" id="main-spin-btn" onclick="spinActive()">⟳ Spin</button><div class="result-pill" id="main-result">Spin to begin</div></div><div class="archive-strip" id="archive-strip"><span class="archive-strip-label">📌 History</span> <span style="font-size:12px;color:var(--muted);font-style:italic" id="archive-empty">Wheels you've spun will appear here</span></div></div><div class="right-panel" id="right-panel"><div id="ctrl-teacher"><div class="ans-row"><button class="ans-btn ok" id="t-ok" onclick="tMark(!0)" disabled>✓ Correct<br><small>+10 pts</small></button> <button class="ans-btn no" id="t-no" onclick="tMark(!1)" disabled>✗ Wrong<br><small>0 pts</small></button></div><div class="stat-row" style="grid-template-columns:repeat(4,1fr)"><div class="stat-box"><div class="stat-val" id="t-r">0</div><div class="stat-lbl">Rounds</div></div><div class="stat-box"><div class="stat-val" id="t-c" style="color:#2e7d32">0</div><div class="stat-lbl">Correct</div></div><div class="stat-box"><div class="stat-val" id="t-w" style="color:#c62828">0</div><div class="stat-lbl">Wrong</div></div><div class="stat-box"><div class="stat-val" id="t-p" style="color:#e65100">0</div><div class="stat-lbl">Punish</div></div></div><!-- ── Score Setting Widget ── --><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px"><div style="text-align:center"><div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ Correct &nbsp;<span id="t-correct-badge">+10 pts</span></div><div style="display:flex;align-items:center;border:2px solid var(--blue);border-radius:10px;overflow:hidden;background:var(--card)"><input id="t-score-correct" type="number" value="10" min="1" max="999" oninput="updateScoreSettings()" style="flex:1;border:none;outline:0;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:0 0;text-align:center;min-width:0"></div></div><div style="text-align:center"><div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px">✗ Wrong &nbsp;<span id="t-wrong-badge">0 pts</span></div><div style="display:flex;align-items:center;border:2px solid var(--blue);border-radius:10px;overflow:hidden;background:var(--card)"><input id="t-score-wrong" type="number" value="0" min="-999" max="999" oninput="updateScoreSettings()" style="flex:1;border:none;outline:0;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:0 0;text-align:center;min-width:0"></div></div></div><div class="scoreboard"><div class="sb-title" style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span>🏆 Scoreboard</span> <span style="display:flex;gap:5px;flex-shrink:0"><button onclick="copyScore()" title="Copy score to clipboard" style="padding:3px 9px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all .15s" onmouseover="this.style.borderColor=&#34;var(--blue)&#34;,this.style.color=&#34;var(--blue)&#34;" onmouseout="this.style.borderColor=&#34;var(--border)&#34;,this.style.color=&#34;var(--muted)&#34;">📋 Copy</button> <button onclick="shareScore()" title="Share score" style="padding:3px 9px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;font-family:var(--fontb);cursor:pointer;color:var(--muted);transition:all .15s" onmouseover="this.style.borderColor=&#34;var(--blue)&#34;,this.style.color=&#34;var(--blue)&#34;" onmouseout="this.style.borderColor=&#34;var(--border)&#34;,this.style.color=&#34;var(--muted)&#34;">📤 Share</button></span></div><div id="t-sb"><div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Start the game to see scores</div></div></div><button class="link-btn" onclick="showReport(&#34;teacher&#34;)">📊 View &amp; download report</button><div class="setup-panel"><h4>⚙️ Class setup</h4><div class="setup-group"><label>Class name</label> <input id="t-cn" type="text" value="Math Grade 5 — Class 3A"></div><div id="t-wheel-configs"></div><button class="start-btn t" onclick="startTeacher()">💾 Save settings &amp; start</button></div></div><div id="ctrl-student" style="display:none"><div class="ans-row"><button class="ans-btn ok" id="s-ok" onclick="sMark(!0)" disabled>✓ Correct<br><small>+10 pts</small></button> <button class="ans-btn no" id="s-no" onclick="sMark(!1)" disabled>✗ Wrong<br><small>Spin W3!</small></button></div><div class="stat-row" style="grid-template-columns:repeat(4,1fr)"><div class="stat-box"><div class="stat-val" id="s-r">0</div><div class="stat-lbl">Rounds</div></div><div class="stat-box"><div class="stat-val" id="s-c" style="color:#2e7d32">0</div><div class="stat-lbl">Correct</div></div><div class="stat-box"><div class="stat-val" id="s-w" style="color:#c62828">0</div><div class="stat-lbl">Wrong</div></div><div class="stat-box"><div class="stat-val" id="s-p" style="color:#e65100">0</div><div class="stat-lbl">Punish</div></div></div><!-- ── Student Score Setting Widget ── --><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px"><div style="text-align:center"><div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ Correct &nbsp;<span id="s-correct-badge">+10 pts</span></div><div style="display:flex;align-items:center;border:2px solid var(--green);border-radius:10px;overflow:hidden;background:var(--card)"><input id="s-score-correct" type="number" value="10" min="1" max="999" oninput="updateStudentScoreSettings()" style="flex:1;border:none;outline:0;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:0 0;text-align:center;min-width:0"></div></div><div style="text-align:center"><div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px">✗ Wrong &nbsp;<span id="s-wrong-badge">0 pts</span></div><div style="display:flex;align-items:center;border:2px solid var(--green);border-radius:10px;overflow:hidden;background:var(--card)"><input id="s-score-wrong" type="number" value="0" min="-999" max="999" oninput="updateStudentScoreSettings()" style="flex:1;border:none;outline:0;padding:7px 6px;font-size:20px;font-family:var(--font);font-weight:800;color:var(--text);background:0 0;text-align:center;min-width:0"></div></div></div><div class="scoreboard"><div class="sb-title">🏆 Leaderboard</div><div id="s-sb"><div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Start the game to see scores</div></div></div><button class="link-btn" onclick="showReport(&#34;student&#34;)">📊 View session results</button><!-- last man standing --><div id="lms-status-panel" class="lms-status" style="display:none"><strong>🏆 Last Student Standing</strong><br><span id="lms-status-text">Enable in Game setup, then save &amp; start.</span></div><div class="setup-panel"><h4>⚙️ Game setup</h4><div id="lms-mode-panel" class="lms-mode-panel off"><label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" id="lms-mode-chk" onchange="toggleLastManStandingMode(this.checked)" style="margin-top:2px;width:15px;height:15px;accent-color:var(--green);flex-shrink:0"> <span><span style="font-size:12px;font-weight:800;color:var(--green)">🏆 LAST STUDENT STANDING</span> <span style="display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4"></span></span></label></div><!-- team vs team --><div id="tvv-mode-panel" class="lms-mode-panel off" style="margin-top:8px"><label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" id="tvv-mode-chk" onchange="toggleTeamVsTeamMode(this.checked)" style="margin-top:2px;width:15px;height:15px;accent-color:var(--blue);flex-shrink:0"> <span><span style="font-size:12px;font-weight:900;color:var(--blue)">⚔️ TEAM VS TEAM</span></span></label></div><div id="tvv-status-panel" class="lms-status" style="display:none;margin-bottom:8px"><strong>⚔️ Team vs Team</strong><br><span id="tvv-status-text">Enable in Game setup, then save &amp; start.</span></div><div id="s-wheel-configs"></div><button class="start-btn s" onclick="startStudent()">💾 Save settings &amp; start</button></div></div></div></div><div class="modal-overlay" id="report-modal"><div class="modal-card"><div class="modal-header"><h3 id="modal-title">📊 Session Report</h3><button class="modal-close" onclick="closeReport()">✕ Close</button></div><div id="modal-body"></div></div></div><div class="ov" id="ov"><div class="ov-card" id="ov-card"><div class="ov-emoji" id="ov-e"></div><div class="ov-title" id="ov-t"></div><div class="ov-sub" id="ov-s"></div><button class="ov-close" id="ov-btn" onclick="closeOv()">Continue</button></div></div><!-- AUTO ANSWER MCQ — MCQ full-screen overlay --><div class="mcq-ov" id="mcq-ov"><div class="mcq-ov-card"><div class="mcq-ov-student" id="mcq-ov-student"></div><div class="mcq-ov-question" id="mcq-ov-question"></div><div class="mcq-ov-grid" id="mcq-ov-grid"></div><div class="mcq-ov-result" id="mcq-ov-result"></div></div></div><script>/* ══════════════════════════════════════════════════════════════════
    WheelQuiz — Full engine
    Mode: teacher | student
    Sequential wheels: active wheel → archive on complete
@@ -1293,12 +713,12 @@ const T_DEFAULTS = [
   askedQuestions:new Set(), eliminateSpinBefore:true },
 
   { title:'👥 Student Answer', items:'Max\nJohn\nMay\nStephanie\nIrene\nSusan\nTom\nSteve\nChris\nNatasha\nJoanne', paletteIdx:1, soundKey:'chime', narration:'please answer!', wheelVoice:'male', enabled:false, eliminateSpinBefore:true },
-  { title:'😂 Student Punishments', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
+  { title:'😂 Student Challenge', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:false, eliminateSpinBefore:true },
 ];
 const S_DEFAULTS = [
   { title:'🔵 Wheel 1 — Team A',      items:'Sarah\nJohn\nEmily\nTom\nLisa', paletteIdx:0, soundKey:'kalimba', narration:'please ask a question!', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
   { title:'🔴 Wheel 2 — Team B',      items:'Alex\nMia\nNoah\nEmma\nLiam', paletteIdx:1, soundKey:'chime',   narration:'please answer!', wheelVoice:'male', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team
-  { title:'😂 Wheel 3 — Punishments', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — on by default
+  { title:'😂 Wheel 3 — Challenge', items:'Time Freeze 10 seconds\nSing 10 seconds\nDance 10 seconds\nMake Cute Emoji Face\nMake Cute Pose\nTell 1 of your secret\n5 x Push Up\n5 x Sit Up\n5 x Jumping Jack\nBlink eye 5 times', paletteIdx:2, soundKey:'drum', narration:'', wheelVoice:'female', enabled:true, eliminateSpinBefore:true, lastManStanding:false, teamVsTeam:false }, //team vs team — on by default
 ];
 function initWheelConfigs() {
   const prevLms = studentWheelConfigs.lastManStanding; //last man standing
@@ -1699,13 +1119,13 @@ function isPunishWheel(cfg) {
   return (cfg.title||'').toLowerCase().includes('punish') || (cfg.title||'').includes('😂');
 }
 
-function buildQueueFromConfigs(m, includePunishment=false) {
+function buildQueueFromConfigs(m, includeChallenge=false) {
   const configs = getConfigs(m);
   const enabled = configs.filter(c => c.enabled);
   if (enabled.length === 0) return [];
-  // For student AND teacher mode, exclude punishment wheels from the main round queue.
+  // For student AND teacher mode, exclude Challenge wheels from the main round queue.
   // They are added dynamically on wrong answer only when enabled.
-  const filtered = (!includePunishment)
+  const filtered = (!includeChallenge)
     ? enabled.filter(c => !isPunishWheel(c))
     : enabled;
   if (filtered.length === 0) return [];
@@ -1764,7 +1184,7 @@ function buildQueueFromConfigs(m, includePunishment=false) {
 }
 
 function getPunishWheelFromConfigs(m) {
-  // Support both teacher and student punishment wheels
+  // Support both teacher and student Challenge wheels
   const sourceConfigs = (m === 'teacher') ? teacherWheelConfigs : studentWheelConfigs;
   const configs = sourceConfigs.filter(c => c.enabled && isPunishWheel(c));
   if (!configs.length) return null;
@@ -1777,8 +1197,8 @@ function getPunishWheelFromConfigs(m) {
   w.narration   = cfg.narration   || '';
   w.wheelVoice  = cfg.wheelVoice  || 'female';
   w.isLastWheel = true;
-  w.isPunishment = true; // flag for text shrink rendering
-  // Apply eliminateSpinBefore history — grey out previously picked punishments
+  w.isChallenge = true; // flag for text shrink rendering
+  // Apply eliminateSpinBefore history — grey out previously picked Challenge
   if (cfg.eliminateSpinBefore !== false && cfg.pickedItems && cfg.pickedItems.size > 0) {
     const greyIndices = [];
     items.forEach((item, idx) => { if (cfg.pickedItems.has(item)) greyIndices.push(idx); });
@@ -1842,7 +1262,7 @@ function startTeacher() {
   for (const w of queue) {
     if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
   }
-  scores={}; topicS={}; scoreboardNames=new Set(); rounds=correct=wrongs=0; teacherPunishments=0; sessionLog=[]; archivedWheels=[];
+  scores={}; topicS={}; scoreboardNames=new Set(); rounds=correct=wrongs=0; teacherChallenge=0; sessionLog=[]; archivedWheels=[];
   Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
   teacherQuizEnded=false;
   curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
@@ -1866,12 +1286,12 @@ function startTeacher() {
     // Normal multi-wheel: last non-punish wheel has the answerer names
     answererWheel.items.forEach(item => { scores[item]=0; scoreboardNames.add(item); });
   } else {
-    // Single-wheel or questions+punishment only: use a single "Class Score" tracker
+    // Single-wheel or questions+Challenge only: use a single "Class Score" tracker
     const sessionName = '⭐ My Score';
     scores[sessionName] = 0;
     scoreboardNames.add(sessionName);
   }
-  // Always tag the very last wheel in the queue as isLastWheel (punishment or answerer)
+  // Always tag the very last wheel in the queue as isLastWheel (Challenge or answerer)
   clearArchive();
   // Tag last wheel
   queue[queue.length-1].isLastWheel = true;
@@ -1915,7 +1335,7 @@ function startStudent() {
   for (const w of queue) {
     if (w.items.length < 2) { alert(`"${w.title}" needs at least 2 items.`); return; }
   }
-  scores={}; punishCt={}; scoreboardNames=new Set(); rounds=correct=wrongs=punishments=0; sessionLog=[]; archivedWheels=[];
+  scores={}; punishCt={}; scoreboardNames=new Set(); rounds=correct=wrongs=Challenge=0; sessionLog=[]; archivedWheels=[];
   Object.keys(wheelLastAngles).forEach(k=>delete wheelLastAngles[k]);
   studentQuizEnded=false;
   curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
@@ -2007,14 +1427,14 @@ function onWheelResult(key, winner) {
 
   if (isLast) {
     if (mode === 'teacher') {
-      // Check if this final wheel IS the teacher punishment wheel
-      const isPunishment = isPunishWheel(activeWheel);
-      if (isPunishment) {
-        // Teacher punishment spin resolved — increment counter and continue to next round
-        teacherPunishments++;
+      // Check if this final wheel IS the teacher Challenge wheel
+      const isChallenge = isPunishWheel(activeWheel);
+      if (isChallenge) {
+        // Teacher Challenge spin resolved — increment counter and continue to next round
+        teacherChallenge++;
         const tpEl = document.getElementById('t-p');
-        if (tpEl) tpEl.textContent = teacherPunishments;
-        // The punished student is curGroup (last Wheel 2 result before punishment)
+        if (tpEl) tpEl.textContent = teacherChallenge;
+        // The punished student is curGroup (last Wheel 2 result before Challenge)
         const punishedName = curGroup || '—';
         playPunishSound();
         showOv('😂', punishedName + ' gets punished!', winner + '\n\nPress Continue to spin next question.', 'punish');
@@ -2031,13 +1451,13 @@ function onWheelResult(key, winner) {
       }
 
     } else {
-      // Student mode — check if this final wheel IS the punishment wheel
-      const isPunishment = isPunishWheel(activeWheel);
-      if (isPunishment) {
-        // Punishment spin resolved — update counter and continue
-        punishments++;
-        document.getElementById('s-p').textContent = punishments;
-        //last man standing — punishment after elimination
+      // Student mode — check if this final wheel IS the Challenge wheel
+      const isChallenge = isPunishWheel(activeWheel);
+      if (isChallenge) {
+        // Challenge spin resolved — update counter and continue
+        Challenge++;
+        document.getElementById('s-p').textContent = Challenge;
+        //last man standing — Challenge after elimination
         if((lmsActive||tvvActive)&&lmsAfterPunishAction){
           const punishedName=lmsPendingPunishPlayer||activeWheel.lmsPunishFor||'—';
           if(punishCt[punishedName]!==undefined)punishCt[punishedName]++;
@@ -2049,14 +1469,14 @@ function onWheelResult(key, winner) {
           document.getElementById('main-spin-btn').textContent='Continue ↑';
           return;
         }
-        // Get names from archived non-punishment wheels
+        // Get names from archived non-Challenge wheels
         const nonPunish = archivedWheels.filter(w => !isPunishWheel({title:w.title}));
         const askerName    = nonPunish[0]?.result || '—';
         const answererName = nonPunish[1]?.result || askerName;
         if (punishCt[answererName] !== undefined) punishCt[answererName]++;
         playPunishSound();
         updateSSB();
-        // Check if this punishment was the last round — end quiz after spinning
+        // Check if this Challenge was the last round — end quiz after spinning
         if (activeWheel.triggersQuizEnd) {
           studentQuizEnded=true;
           pendingAdvanceWheel=false;
@@ -2140,16 +1560,16 @@ function tMark(ok) {
     showOv('🎯','Quiz Ended!','View or Download Scoreboard\nShare your result','info');
     return;
   }
-  // If wrong answer AND teacher punishment wheel is enabled, queue it first
+  // If wrong answer AND teacher Challenge wheel is enabled, queue it first
   if (!ok) {
     const pw = getPunishWheelFromConfigs('teacher');
     if (pw) {
       wheelQueue = [pw];
-      showOv('😢',`${group} got it wrong!`,`Spin the punishment wheel! 👇`, 'lose');
+      showOv('😢',`${group} got it wrong!`,`Spin the Challenge wheel! 👇`, 'lose');
       loadNextWheel(true);
       return;
     }
-    // No punishment wheel — show incorrect overlay then continue
+    // No Challenge wheel — show incorrect overlay then continue
     showOv('😢','Incorrect!',`${scoreWrong > 0 ? '+' : ''}${scoreWrong} points this round`,'lose');
   } else {
     showOv('🎉', 'Correct!', `+${scoreCorrect} points! 🏆`, 'win');
@@ -2195,23 +1615,23 @@ function sMark(ok) {
   } else {
     playLoseSound();
     wrongs++; const _swEl=document.getElementById('s-w'); if(_swEl)_swEl.textContent=wrongs;
-    // Apply wrong score immediately so dashboard updates before punishment wheel spins
+    // Apply wrong score immediately so dashboard updates before Challenge wheel spins
     if (scores[answerer] !== undefined) scores[answerer] = (scores[answerer]||0) + sScoreWrong;
     sessionLog.push({time:new Date().toLocaleTimeString(),round:rounds,asker,answerer,result:'Wrong',points:sScoreWrong});
     updateSSB();
     document.getElementById('s-ok').disabled=true;
     document.getElementById('s-no').disabled=true;
-    // Punishment wheel takes priority — spin it BEFORE checking quiz complete
+    // Challenge wheel takes priority — spin it BEFORE checking quiz complete
     const pw = getPunishWheelFromConfigs('student');
     if (pw) {
-      // Mark quizDone on the punishment wheel so it triggers end-of-quiz after spinning
+      // Mark quizDone on the Challenge wheel so it triggers end-of-quiz after spinning
       pw.triggersQuizEnd = quizDone;
       wheelQueue = [pw];
-      showOv('😢',`${answerer} got it wrong!`,`Spin the punishment wheel! 👇`,'lose');
+      showOv('😢',`${answerer} got it wrong!`,`Spin the Challenge wheel! 👇`,'lose');
       loadNextWheel(true);
       return;
     }
-    // No punishment wheel — now check if quiz is complete
+    // No Challenge wheel — now check if quiz is complete
     if(quizDone){
       studentQuizEnded=true;
       pendingAdvanceWheel=false;
@@ -2223,7 +1643,7 @@ function sMark(ok) {
       return;
     }
     // Not done — move to next round
-    showOv('😢',`${answerer} got it wrong!`,`No punishment wheel set.\nMoving to next round.`,'lose');
+    showOv('😢',`${answerer} got it wrong!`,`No Challenge wheel set.\nMoving to next round.`,'lose');
     resetRound();
     const q = buildQueueFromConfigs('student');
     if (q.length > 0) { q[q.length-1].isLastWheel=true; wheelQueue=q; loadNextWheel(false); }
@@ -2271,7 +1691,7 @@ function collapseAllWheels(m) {
 
 /* ══ SCOREBOARDS ════════════════════════════════════════════════ */
 function updateTSB(){
-  // Only show names registered as scoreboard players — no topics, no punishments
+  // Only show names registered as scoreboard players — no topics, no Challenge
   const entries = Object.entries(scores)
     .filter(([n]) => scoreboardNames.size === 0 || scoreboardNames.has(n))
     .sort((a,b) => b[1]-a[1]);
@@ -2295,7 +1715,7 @@ function updateTSB(){
       <span class="score-pts">${p}pts</span></div>`).join('');
 }
 function updateSSB(){
-  // Only show names registered as scoreboard players — no punishment items
+  // Only show names registered as scoreboard players — no Challenge items
   const entries = Object.entries(scores)
     .filter(([n]) => scoreboardNames.size === 0 || scoreboardNames.has(n))
     .sort((a,b) => b[1]-a[1]);
@@ -2326,7 +1746,7 @@ function switchMode(m){
   archivedWheels=[];wheelQueue=[];activeWheel=null;
   curAsker=null;curAnswerer=null;curTopic=null;curGroup=null;
   scores={};punishCt={};topicS={};scoreboardNames=new Set();
-  rounds=correct=wrongs=punishments=teacherPunishments=0;
+  rounds=correct=wrongs=Challenge=teacherChallenge=0;
   clearArchive();
   document.getElementById('main-spin-btn').disabled=false;
   document.getElementById('main-spin-btn').textContent='⟳ Spin';
@@ -2444,7 +1864,7 @@ function downloadPDF(m){
   <tr><td>Rounds</td><td>${rounds}</td></tr><tr><td>Correct</td><td>${correct}</td></tr>
   <tr><td>Wrong</td><td>${wrongs}</td></tr><tr><td>Accuracy</td><td>${acc}%</td></tr>
   ${sorted[0]?`<tr><td>Winner</td><td>🏆 ${sorted[0][0]} — ${sorted[0][1]}pts</td></tr>`:''}</table>
-  <h2>Scoreboard</h2><table><tr><th>Rank</th><th>Name</th><th>Points</th>${m==='student'?'<th>Punishments</th>':''}</tr>`;
+  <h2>Scoreboard</h2><table><tr><th>Rank</th><th>Name</th><th>Points</th>${m==='student'?'<th>Challenge</th>':''}</tr>`;
   sorted.forEach(([n,p],i)=>html+=`<tr><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${n}</td><td>${p}</td>${m==='student'?`<td>${punishCt[n]||0}</td>`:''}</tr>`);
   html+=`</table>`;
   if(m==='teacher'&&Object.keys(topicS).length){
@@ -2463,7 +1883,7 @@ function downloadPDF(m){
 
 function downloadCSV(m){
   const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'WheelQuiz'):'WheelQuiz_Study').replace(/[^a-z0-9]/gi,'_');
-  let csv=`WheelQuiz REPORT\r\nDate,${sessionDate}\r\nRounds,${rounds}\r\nCorrect,${correct}\r\nWrong,${wrongs}\r\nAccuracy,${rounds?Math.round(correct/rounds*100):0}%\r\n\r\nSCOREBOARD\r\nRank,Name,Points${m==='student'?',Punishments':''}\r\n`;
+  let csv=`WheelQuiz REPORT\r\nDate,${sessionDate}\r\nRounds,${rounds}\r\nCorrect,${correct}\r\nWrong,${wrongs}\r\nAccuracy,${rounds?Math.round(correct/rounds*100):0}%\r\n\r\nSCOREBOARD\r\nRank,Name,Points${m==='student'?',Challenge':''}\r\n`;
   Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>csv+=`${i+1},${n},${p}${m==='student'?','+(punishCt[n]||0):''}\r\n`);
   if(m==='teacher'&&Object.keys(topicS).length){
     csv+=`\r\nTOPIC PERFORMANCE\r\nTopic,Correct,Wrong,Accuracy\r\n`;
@@ -2477,7 +1897,7 @@ function downloadCSV(m){
 function downloadLog(m){
   const title=(m==='teacher'?(document.getElementById('t-cn')?.value||'WheelQuiz'):'WheelQuiz_Study').replace(/[^a-z0-9]/gi,'_');
   let log=`=== WheelQuiz SESSION LOG ===\nDate: ${sessionDate}\nMode: ${m}\nRounds: ${rounds} | Correct: ${correct} | Wrong: ${wrongs}\nAccuracy: ${rounds?Math.round(correct/rounds*100):0}%\n\n--- SCORES ---\n`;
-  Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>log+=`  ${i+1}. ${n.padEnd(16)} ${p}pts${m==='student'&&punishCt[n]?' ('+punishCt[n]+' punishments)':''}\n`);
+  Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([n,p],i)=>log+=`  ${i+1}. ${n.padEnd(16)} ${p}pts${m==='student'&&punishCt[n]?' ('+punishCt[n]+' Challenge)':''}\n`);
   if(sessionLog.length){log+=`\n--- ROUND LOG ---\n`;sessionLog.forEach(r=>log+=`[${r.time}] R${r.round}: ${r.asker} → ${r.answerer} | ${r.result} | ${r.points>0?'+':''}${r.points}pts\n`);}
   log+=`\n=== END ===\nGenerated by WheelQuiz\n`;
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([log],{type:'text/plain'}));
@@ -2600,8 +2020,8 @@ function toggleTeamVsTeamMode(on){
   }
   syncStudentBattleModeUI();
 }
-//last man standing + team vs team — shared punishment wheel check
-function lmsIsPunishmentEnabled(){
+//last man standing + team vs team — shared Challenge wheel check
+function lmsIsChallengeEnabled(){
   return (lmsActive||tvvActive)&&studentWheelConfigs.some(c=>c.enabled&&isPunishWheel(c));
 }
 //last man standing + team vs team
@@ -2624,8 +2044,8 @@ function syncTeamVsTeamUI(){
   if(noBtn&&on)noBtn.innerHTML=`✗ Wrong<br><small>eliminate answerer · +${lmsBattlePts||sScoreCorrect} pts to asker team</small>`;
   else if(noBtn&&!studentWheelConfigs.lastManStanding)updateStudentScoreSettings();
 }
-//last man standing — spin punishment wheel before resuming LMS round
-function lmsStartPunishmentSpin(playerName,callback){
+//last man standing — spin Challenge wheel before resuming LMS round
+function lmsStartChallengepin(playerName,callback){
   const pw=getPunishWheelFromConfigs('student');
   if(!pw){if(callback)callback();return false;}
   lmsPendingPunishPlayer=playerName;
@@ -2635,7 +2055,7 @@ function lmsStartPunishmentSpin(playerName,callback){
   wheelQueue=[pw];
   archivedWheels=[];
   ['s-ok','s-no'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
-  showOv('😂',playerName+' eliminated!','Spin the punishment wheel! 👇','punish');
+  showOv('😂',playerName+' eliminated!','Spin the Challenge wheel! 👇','punish');
   loadNextWheel(true);
   return true;
 }
@@ -2643,8 +2063,8 @@ function lmsStartPunishmentSpin(playerName,callback){
 function lmsAfterEliminationThenContinue(eliminatedName,ok,asker,answerer,pts){
   const proceedNoPunish=()=>lmsFinishMarkAnswerRound(ok,asker,answerer,pts,false);
   const proceedAfterPunish=()=>lmsFinishMarkAnswerRound(ok,asker,answerer,pts,true); //last man standing — skip duplicate correct/wrong box
-  if(lmsIsPunishmentEnabled()){
-    if(lmsStartPunishmentSpin(eliminatedName,proceedAfterPunish))return;
+  if(lmsIsChallengeEnabled()){
+    if(lmsStartChallengepin(eliminatedName,proceedAfterPunish))return;
   }
   proceedNoPunish();
 }
@@ -2765,7 +2185,7 @@ function updateLMSStatusPanel(asker,answerer){
     const sn=survivor?lmsGetBattleWheels().indexOf(survivor)+1:'?';
     msg=`Wheel ${sn} only · ${msg}`;
   }
-  if(lmsIsPunishmentEnabled())msg+=` · 😂 Punish on elimination`;
+  if(lmsIsChallengeEnabled())msg+=` · 😂 Punish on elimination`;
   if(asker&&answerer)msg=`Round: <strong>${asker}</strong> asks → <strong>${answerer}</strong> answers · ${msg}`;
   else if(active.length)msg+=`: ${active.join(', ')}`;
   el.innerHTML=msg;
@@ -2967,7 +2387,7 @@ function updateTVVStatusPanel(asker,answerer){
   const askFirst=(tvvRoundNum%2===1);
   let msg=`Round ${tvvRoundNum} · ${tvvTeamDisplay(0)}: ${aLeft} left · ${tvvTeamDisplay(1)}: ${bLeft} left`;
   msg+=` · Next asker: ${askFirst?tvvTeamDisplay(0):tvvTeamDisplay(1)}`;
-  if(lmsIsPunishmentEnabled())msg+=' · 😂 Punish on elimination';
+  if(lmsIsChallengeEnabled())msg+=' · 😂 Punish on elimination';
   if(asker&&answerer)msg=`<strong>${asker}</strong> (${tvvTeamDisplay(curAskerTeamIdx)}) asks → <strong>${answerer}</strong> (${tvvTeamDisplay(curAnswererTeamIdx)}) answers · ${msg}`;
   el.innerHTML=msg;
 }
@@ -3010,8 +2430,8 @@ function tvvFinishRound(ok,asker,answerer,pts,skipOutcomeOverlay){
 function tvvAfterEliminationThenContinue(eliminatedName,asker,answerer,pts){
   const proceedAfterPunish=()=>tvvFinishRound(false,asker,answerer,pts,true);
   const proceedNoPunish=()=>tvvFinishRound(false,asker,answerer,pts,false);
-  if(lmsIsPunishmentEnabled()){
-    if(lmsStartPunishmentSpin(eliminatedName,proceedAfterPunish))return;
+  if(lmsIsChallengeEnabled()){
+    if(lmsStartChallengepin(eliminatedName,proceedAfterPunish))return;
   }
   proceedNoPunish();
 }
@@ -3263,36 +2683,13 @@ function shareScore() {
     copyScore();
   }
 }
-/* ══ END SHARE / COPY SCORE ══════════════════════════════════════ */
-</script>
-<div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem">
-  <div style="max-width:800px;margin:0 auto">
-    <h2 style="font-family:var(--font);font-size:22px;font-weight:900;margin-bottom:6px;color:var(--text)">Frequently asked questions</h2>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem">🎯WheelQuiz is a free interactive spin wheel quiz game featuring live scoring, voice narration, custom questions, survival battles, team vs team gameplay, and classroom-friendly multiplayer fun suitable for teachers, students and all ages.</p>
-
-    <div style="display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap">
-      <button id="faq-t-btn" onclick="showFaq('t')"
-        style="padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--blue);background:var(--blue);color:#fff;font-family:var(--fontb)">
-        👨‍🏫 Teacher FAQ
-      </button>
-      <button id="faq-s-btn" onclick="showFaq('s')"
-        style="padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:var(--fontb)">
-        👨‍🎓 Student FAQ
-      </button>
-    </div>
-
-    <div id="faq-list" style="background:var(--bg);border-radius:14px;border:1px solid var(--border);overflow:hidden"></div>
-  </div>
-</div>
-
-<script>
-/* ── FAQ ──────────────────────────────────────────────────────── */
+/* ══ END SHARE / COPY SCORE ══════════════════════════════════════ */</script><div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem"><div style="max-width:800px;margin:0 auto"><h2 style="font-family:var(--font);font-size:22px;font-weight:900;margin-bottom:6px;color:var(--text)">Frequently asked questions</h2><p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem">🎯WheelQuiz is a free interactive spin wheel quiz game featuring live scoring, voice narration, custom questions, survival battles, team vs team gameplay, and classroom-friendly multiplayer fun suitable for teachers, students and all ages.</p><div style="display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap"><button id="faq-t-btn" onclick="showFaq(&#34;t&#34;)" style="padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--blue);background:var(--blue);color:#fff;font-family:var(--fontb)">👨‍🏫 Teacher FAQ</button> <button id="faq-s-btn" onclick="showFaq(&#34;s&#34;)" style="padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:var(--fontb)">👨‍🎓 Student FAQ</button></div><div id="faq-list" style="background:var(--bg);border-radius:14px;border:1px solid var(--border);overflow:hidden"></div></div></div><script>/* ── FAQ ──────────────────────────────────────────────────────── */
 const TFAQ=[
   ['Do I need an account to use WheelQuiz?','No account needed — WheelQuiz is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning.'],
   ['Can I custom my own Questions & Answers?','Yes, the Wheel 1 setting box requires one question and answer per line. Make sure every question includes a “:” or “)” for the correct formatting. You can also copy the default questions from the input box into your notepad to understand the required format more easily.'],
-  ['Can I use WheelQuiz with just one wheel?','Absolutely — when only 1 wheel is selected, the game works like a Solo Mode Self-Quiz where you answer the questions yourself. You can fully customize your own list of questions and answers for random spinning. To make the game more fun and engaging, you can also enable Punishment Mode on Wheel 3 by adding challenge tasks like push-ups, sit-ups, planks, and more whenever answers incorrectly.'],
-  ['What is the different between Wheel 1,2,3','In Teacher Mode, Wheel 1 is mainly used for questions and self-quiz gameplay, while Wheel 2 is designed for student names, player names, or team/group selections. Wheel 3 is an optional punishment wheel (disabled by default). Users can fully customize and rename all wheel parameters as needed.'],
-  ['Can i disable or modify punishment wheel?','Yes — this is an optional wheel to suit your prefrences. And default punishments intention is to make learning fun, safe and interactive.'],
+  ['Can I use WheelQuiz with just one wheel?','Absolutely — when only 1 wheel is selected, the game works like a Solo Mode Self-Quiz where you answer the questions yourself. You can fully customize your own list of questions and answers for random spinning. To make the game more fun and engaging, you can also enable Challenge Mode on Wheel 3 by adding challenge tasks like push-ups, sit-ups, planks, and more whenever answers incorrectly.'],
+  ['What is the different between Wheel 1,2,3','In Teacher Mode, Wheel 1 is mainly used for questions and self-quiz gameplay, while Wheel 2 is designed for student names, player names, or team/group selections. Wheel 3 is an optional Challenge wheel (disabled by default). Users can fully customize and rename all wheel parameters as needed.'],
+  ['Can i disable or modify Challenge Wheel?','Yes — this is an optional wheel to suit your prefrences. And default Challenge intention is to make learning fun, safe and interactive.'],
   ['How do I rename or customise the wheels?','Click the wheel title in the setup panel to rename it — the change reflects live on the wheel stage and spin button. Each wheel also has its own colour palette and spin sound so every wheel feels unique.'],
   ['It sounds exciting! How do I start the game?','Simply edit the wheel parameters and click on “Save Settings & Start.” Then, click either the rectangular Spin button or the circular button at the center of the wheel to begin the game.'],
   ['Does WheelQuiz work on mobile or desktops or laptop?','Yes, WheelQuiz works on all devices. However, on some mobile phones, male voice narration may not play due to mobile browser or voice synthesis limitations.'],
@@ -3301,11 +2698,11 @@ const TFAQ=[
 ];
 const SFAQ=[
   ['Where can we play this game?','Student Mode can be played anywhere students are able to gather together, such as in classrooms, at home, during tuition sessions, study groups, camps, or even outdoor activities.'],
-  ['What is Last Student Standing Mode?','Last Student Standing is a Student vs Student survival battle where the game continues until only one student remains. Wheel 1 is the Questioner and Wheel 2 is the Answerer. If the Answerer answers correctly (+10 points), the Questioner gets eliminated. If the Answerer answers incorrectly (-10 points), the Answerer gets eliminated. Punishment Wheel 3 is enabled by default, and every eliminated student must spin the punishment wheel. If Punishment Wheel 3 is disabled, the game continues normally without punishments.'],
-  ['What is Team VS Team Mode?','Team VS Team Mode is a battle between Team A and Team B, similar to a competitive classroom challenge. Team A starts by asking a question to Team B. If the selected student from Team B answers incorrectly, that student is eliminated. Then Team B asks a question to Team A. If the selected student from Team A answers incorrectly, that student is eliminated. The first team to have all members eliminated loses the game. Punishment Wheel 3 is enabled by default, and every eliminated student must spin the punishment wheel. If Punishment Wheel 3 is disabled, the game continues normally without punishments.'],
+  ['What is Last Student Standing Mode?','Last Student Standing is a Student vs Student survival battle where the game continues until only one student remains. Wheel 1 is the Questioner and Wheel 2 is the Answerer. If the Answerer answers correctly (+10 points), the Questioner gets eliminated. If the Answerer answers incorrectly (-10 points), the Answerer gets eliminated. Challenge Wheel 3 is enabled by default, and every eliminated student must spin the Challenge wheel. If Challenge Wheel 3 is disabled, the game continues normally without Challenge.'],
+  ['What is Team VS Team Mode?','Team VS Team Mode is a battle between Team A and Team B, similar to a competitive classroom challenge. Team A starts by asking a question to Team B. If the selected student from Team B answers incorrectly, that student is eliminated. Then Team B asks a question to Team A. If the selected student from Team A answers incorrectly, that student is eliminated. The first team to have all members eliminated loses the game. Challenge Wheel 3 is enabled by default, and every eliminated student must spin the Challenge wheel. If Challenge Wheel 3 is disabled, the game continues normally without Challenge.'],
   ['Are there any other game modes?','Yes! If both Last Student Standing Mode and Team VS Team Mode are disabled, students can freely play using Wheels 1, 2, and 3 in a more casual gameplay style. For equal chances of asking and answering questions, enter the same list of student names into both Wheel 1 and Wheel 2. For unlimited gameplay rounds, disable the “Eliminate Wheel Spin Before” option.'],
   ['Do I need an account to use WheelQuiz?','No account needed — WheelQuiz is completely free to use with no signup required. Simply open the page, configure your wheels and start spinning.'],
-  ['Can i disable or modify punishment wheel?','Yes — this is an optional wheel to suit your prefrences. And default punishments intention is to make learning fun, safe and interactive.'],
+  ['Can i disable or modify Challenge wheel?','Yes — this is an optional wheel to suit your prefrences. And default Challenge intention is to make learning fun, safe and interactive.'],
   ['How do I rename or customise the wheels?','Click the wheel title in the setup panel to rename it — the change reflects live on the wheel stage and spin button. Each wheel also has its own colour palette and spin sound so every wheel feels unique.'],
   ['It sounds exciting! How do I start the game?','Simply edit the wheel parameters and click on “Save Settings & Start.” Then, click either the rectangular Spin button or the circular button at the center of the wheel to begin the game.'],
   ['Does WheelQuiz work on mobile or desktops or laptop?','Yes, WheelQuiz works on all devices. However, on some mobile phones, male voice narration may not play due to mobile browser or voice synthesis limitations.'],
@@ -3341,8 +2738,4 @@ function tFaq(type,i){
 }
 
 // Init FAQ on load
-showFaq('t');
-</script>
-
-</body>
-</html>
+showFaq('t');</script><!-- ── DONATE SECTION ── --><div style="background:var(--card);border-top:1px solid var(--border);padding:2.5rem 1.5rem 3rem"><div style="max-width:800px;margin:0 auto;text-align:center"><div style="display:inline-block;background:var(--blue-l);color:var(--blue);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem">Support WheelQuiz</div><h2 style="font-family:var(--font);font-size:22px;font-weight:900;color:var(--text);margin-bottom:8px">Enjoy WheelQuiz? Buy us a coffee ☕</h2><p style="font-size:14px;color:var(--muted);max-width:480px;margin:0 auto 1.75rem;line-height:1.6">WheelQuiz is completely free with no paywalls. If it has helped your classroom or saved you time, a small donation keeps the project alive and ad-free. Thank you! 🙏</p><div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap"><!-- Ko-fi button --> <a href="https://ko-fi.com/steverlast" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:10px;background:#ff5e5b;color:#fff;font-family:var(--fontb);font-size:15px;font-weight:700;padding:13px 26px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(255,94,91,.35);transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform=&#34;translateY(-2px)&#34;,this.style.boxShadow=&#34;0 6px 20px rgba(255,94,91,0.45)&#34;" onmouseout="this.style.transform=&#34;&#34;,this.style.boxShadow=&#34;0 4px 14px rgba(255,94,91,0.35)&#34;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.034-.099-.086-.099-.086-.383-.uso-.793-1.077-.793-1.077-1.31-1.606.757-3.468.757-3.468 1.67-1.404 3.927-.489 4.516 1.27.197.568.227 1.187-.06 1.362z" fill="white"/></svg> Support on Ko-fi </a><!-- PayPal button --> <a href="https://paypal.me/steverlast" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:10px;background:#003087;color:#fff;font-family:var(--fontb);font-size:15px;font-weight:700;padding:13px 26px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(0,48,135,.3);transition:transform .15s,box-shadow .15s" onmouseover="this.style.transform=&#34;translateY(-2px)&#34;,this.style.boxShadow=&#34;0 6px 20px rgba(0,48,135,0.42)&#34;" onmouseout="this.style.transform=&#34;&#34;,this.style.boxShadow=&#34;0 4px 14px rgba(0,48,135,0.30)&#34;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.291-.077.443-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.1zm14.146-14.42c-.039.21-.081.42-.127.63-1.21 6.22-5.37 8.29-10.68 8.29H8.198l-1.516 9.6h4.943a.78.78 0 0 0 .771-.66l.032-.163.615-3.89.04-.21a.78.78 0 0 1 .771-.66h.485c3.149 0 5.613-1.279 6.334-4.977.3-1.54.146-2.825-.65-3.73a3.087 3.087 0 0 0-.801-.63z" fill="#009cde"/><path d="M19.238 6.5a7.764 7.764 0 0 0-.966-.194 12.24 12.24 0 0 0-1.96-.142h-5.94a.78.78 0 0 0-.771.66L8.198 17.83h2.217c5.31 0 9.47-2.07 10.68-8.29.046-.21.088-.42.127-.63-.617-.326-1.28-.42-1.984-.41z" fill="#fff"/></svg> Donate via PayPal</a></div></div></div><!-- ── LEGAL FOOTER ── --><footer style="background:var(--card);border-top:1px solid var(--border);padding:1.25rem 1.5rem;text-align:center;font-family:var(--fontb);font-size:12px;color:var(--muted)"><div style="max-width:800px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 16px"><span>&copy; <span id="footer-year"></span> WheelQuiz. All rights reserved.</span> <span style="color:var(--border)">&middot;</span> <a href="privacy.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color=&#34;var(--blue)&#34;" onmouseout="this.style.color=&#34;var(--muted)&#34;">Privacy Policy</a> <span style="color:var(--border)">&middot;</span> <a href="terms.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color=&#34;var(--blue)&#34;" onmouseout="this.style.color=&#34;var(--muted)&#34;">Terms of Service</a> <span style="color:var(--border)">&middot;</span> <a href="copyright.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color=&#34;var(--blue)&#34;" onmouseout="this.style.color=&#34;var(--muted)&#34;">Copyright</a> <span style="color:var(--border)">&middot;</span> <a href="contact.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color=&#34;var(--blue)&#34;" onmouseout="this.style.color=&#34;var(--muted)&#34;">Contact Us</a> <span style="color:var(--border)">&middot;</span> <a href="changelog.html" target="_blank" style="color:var(--muted);text-decoration:none;font-weight:600" onmouseover="this.style.color=&#34;var(--blue)&#34;" onmouseout="this.style.color=&#34;var(--muted)&#34;">ChangeLog</a></div></footer><script>document.getElementById("footer-year").textContent=(new Date).getFullYear()</script></body></html>
