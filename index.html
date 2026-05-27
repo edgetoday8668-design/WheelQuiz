@@ -571,10 +571,13 @@ function setTeacherQuizCompleteUI(){
     if(!activeWheel.greyIndices.includes(lastIdx))activeWheel.greyIndices.push(lastIdx);
     const c=document.getElementById('active-canvas');
     if(c){
-      // Re-measure parent width (mobile can have stale/zero canvas size after layout reflow)
-      const sz=c.parentElement?.clientWidth||c.width||340;
-      if(sz>0){c.width=sz;c.height=sz;}
-      drawWheelFromState(c,activeWheel);
+      // Re-measure parent width with full fallback chain for mobile layout reflow
+      requestAnimationFrame(()=>{
+        const sz=c.parentElement?.clientWidth||c.parentElement?.offsetWidth||
+                  c.getBoundingClientRect().width||c.width||340;
+        if(sz>0){c.width=sz;c.height=sz;}
+        drawWheelFromState(c,activeWheel);
+      });
     }
   }
 }
@@ -607,10 +610,13 @@ function setStudentQuizCompleteUI(){
     if(!activeWheel.greyIndices.includes(lastIdx))activeWheel.greyIndices.push(lastIdx);
     const c=document.getElementById('active-canvas');
     if(c){
-      // Re-measure parent width (mobile can have stale/zero canvas size after layout reflow)
-      const sz=c.parentElement?.clientWidth||c.width||340;
-      if(sz>0){c.width=sz;c.height=sz;}
-      drawWheelFromState(c,activeWheel);
+      // Re-measure parent width with full fallback chain for mobile layout reflow
+      requestAnimationFrame(()=>{
+        const sz=c.parentElement?.clientWidth||c.parentElement?.offsetWidth||
+                  c.getBoundingClientRect().width||c.width||340;
+        if(sz>0){c.width=sz;c.height=sz;}
+        drawWheelFromState(c,activeWheel);
+      });
     }
   }
 }
@@ -3063,7 +3069,7 @@ function copyScore() {
 function shareScore() {
   const msg = buildScoreMessage();
   if (navigator.share) {
-    navigator.share({ title: 'My WheelQuiz Score', text: msg, url: 'https://www.WheelQuiz.com' }).catch(()=>{});
+    navigator.share({ title: 'My WheelQuiz Score', text: msg }).catch(()=>{});
   } else {
     copyScore();
   }
