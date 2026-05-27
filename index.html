@@ -570,7 +570,12 @@ function setTeacherQuizCompleteUI(){
     if(!activeWheel.greyIndices)activeWheel.greyIndices=[];
     if(!activeWheel.greyIndices.includes(lastIdx))activeWheel.greyIndices.push(lastIdx);
     const c=document.getElementById('active-canvas');
-    if(c)drawWheelFromState(c,activeWheel);
+    if(c){
+      // Re-measure parent width (mobile can have stale/zero canvas size after layout reflow)
+      const sz=c.parentElement?.clientWidth||c.width||340;
+      if(sz>0){c.width=sz;c.height=sz;}
+      drawWheelFromState(c,activeWheel);
+    }
   }
 }
 
@@ -601,7 +606,12 @@ function setStudentQuizCompleteUI(){
     if(!activeWheel.greyIndices)activeWheel.greyIndices=[];
     if(!activeWheel.greyIndices.includes(lastIdx))activeWheel.greyIndices.push(lastIdx);
     const c=document.getElementById('active-canvas');
-    if(c)drawWheelFromState(c,activeWheel);
+    if(c){
+      // Re-measure parent width (mobile can have stale/zero canvas size after layout reflow)
+      const sz=c.parentElement?.clientWidth||c.width||340;
+      if(sz>0){c.width=sz;c.height=sz;}
+      drawWheelFromState(c,activeWheel);
+    }
   }
 }
 
@@ -3125,7 +3135,7 @@ const CFAQ=[
 
 function showFaq(type){
   const gb=document.getElementById('faq-g-btn'),tb=document.getElementById('faq-t-btn'),sb=document.getElementById('faq-s-btn'),qb=document.getElementById('faq-q-btn'),cb=document.getElementById('faq-c-btn');
-  if(gb)gb.style.cssText=`padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fontb);border:1px solid ${type==='g'?'var(--orange)':'var(--border)'};background:${type==='g'?'var(--orange)':'var(--card)'};color:${type==='g'?'#fff':'var(--muted)'}`;
+  if(gb)gb.style.cssText=`padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fontb);border:1px solid ${type==='g'?'#0EA5E9':'var(--border)'};background:${type==='g'?'#0EA5E9':'var(--card)'};color:${type==='g'?'#fff':'var(--muted)'}`;
   if(tb)tb.style.cssText=`padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fontb);border:1px solid ${type==='t'?'var(--blue)':'var(--border)'};background:${type==='t'?'var(--blue)':'var(--card)'};color:${type==='t'?'#fff':'var(--muted)'}`;
   if(sb)sb.style.cssText=`padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fontb);border:1px solid ${type==='s'?'var(--green)':'var(--border)'};background:${type==='s'?'var(--green)':'var(--card)'};color:${type==='s'?'#fff':'var(--muted)'}`;
   if(qb)qb.style.cssText=`padding:6px 18px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fontb);border:1px solid ${type==='q'?'var(--quiz)':'var(--border)'};background:${type==='q'?'var(--quiz)':'var(--card)'};color:${type==='q'?'#fff':'var(--muted)'}`;
